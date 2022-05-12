@@ -1,11 +1,12 @@
 ﻿namespace ScavengerHunt_API.Models
 {
-    public class Coordinate
+    public class Room
     {
         public int Id { get; set; }
-        public double latitude { get; set; }
-        public double longitude { get; set; }
+        public string Name { get; set; }
+        public string LocationTitle { get; set; }
         public int LocationId { get; set; }
         public Location Location { get; set; }
+        public ICollection<Item> Items { get; set; }
     }
 }

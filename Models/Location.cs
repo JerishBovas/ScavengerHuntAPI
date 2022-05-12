@@ -1,15 +1,22 @@
 ﻿namespace ScavengerHunt_API.Models
 {
-    public record Location
+    public class Location
     {
-        public Guid Id { get; init; }
-
-        public string Name { get; init; }
-
-        public string description { get; init; }
-
-        public string address { get; init; }
-
-        public Coordinate coordinates { get; init; }
+        public int Id { get; set; }
+        public bool IsPrivate { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string Address { get; set; }
+        public int UserId { get; set; }
+        public User User { get; set; }
+        public ICollection<Group>? Groups { get; set; }
+        public Coordinate Coordinate { get; set; }
+        public ICollection<Room> Rooms { get; set; }
+        public string ImageName { get; set; }
+        public Difficult Difficulty { get; set; }
+        public int Ratings { get; set; }
+        public String Tags { get; set; }
+        public DateTimeOffset CreatedDate { get; set; }
+        public DateTimeOffset LastUpdated { get; set; }
     }
 }
