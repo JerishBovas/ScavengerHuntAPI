@@ -6,6 +6,10 @@
     "mssql1": {
       "type": "mssql",
       "connectionId": "ConnectionStrings:ScavengerHunt_API"
+    },
+    "mssql2": {
+      "type": "mssql",
+      "connectionId": "ConnectionStrings:ScavengerHunt_APIContext"
     }
   }
 }

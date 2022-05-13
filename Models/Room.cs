@@ -6,7 +6,7 @@
         public string Name { get; set; }
         public string LocationTitle { get; set; }
         public int LocationId { get; set; }
-        public Location Location { get; set; }
+        public virtual Location Location { get; set; }
         public ICollection<Item> Items { get; set; }
     }
 }

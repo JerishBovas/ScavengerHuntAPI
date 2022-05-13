@@ -6,7 +6,7 @@
         public DateTime DatePlayed { get; set; }
         public string LocationName { get; set; }
         public int Score { get; set; }
-        public UserSection? UserSection { get; set; }
+        public UserLog? UserLog { get; set; }
         public Group? Group { get; set; }
     }
 }

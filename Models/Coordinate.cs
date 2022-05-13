@@ -1,4 +1,6 @@
-﻿namespace ScavengerHunt_API.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ScavengerHunt_API.Models
 {
     public class Coordinate
     {
@@ -6,6 +8,6 @@
         public double latitude { get; set; }
         public double longitude { get; set; }
         public int LocationId { get; set; }
-        public Location Location { get; set; }
+        public virtual Location Location { get; set; }
     }
 }

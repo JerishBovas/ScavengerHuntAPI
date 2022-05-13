@@ -9,8 +9,9 @@
         public string Address { get; set; }
         public int UserId { get; set; }
         public User User { get; set; }
-        public ICollection<Group>? Groups { get; set; }
-        public Coordinate Coordinate { get; set; }
+        public int GroupId { get; set; }
+        public Group Group { get; set; }
+        public virtual Coordinate Coordinate { get; set; }
         public ICollection<Room> Rooms { get; set; }
         public string ImageName { get; set; }
         public Difficult Difficulty { get; set; }
