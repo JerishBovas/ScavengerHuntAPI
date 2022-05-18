@@ -114,14 +114,14 @@ namespace ScavengerHunt_API.Controllers
         // POST api/group
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult> Create([FromBody] GroupDto res)
+        public async Task<ActionResult> Create([FromBody] GroupShortDto res)
         {
             string email;
             User? user;
             Group newgrp;
 
             email = ExtMethods.GetCurrentUser(HttpContext);
-            if (email is ""){return BadRequest("User not logged in");}
+            if (email is ""){return Unauthorized("User not logged in");}
 
             user = await userRepo.GetByEmailAsync(email);
             if (user == null){return NotFound("User not found");}
@@ -147,13 +147,13 @@ namespace ScavengerHunt_API.Controllers
                 return BadRequest(e.Message);
             }
 
-            return Ok();
+            return CreatedAtAction(nameof(Get), res);
         }
 
         // PUT api/group/5
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, [FromBody] GroupDto res)
+        public async Task<ActionResult> Update(int id, [FromBody] GroupShortDto res)
         {
             string email;
             User? user;
@@ -161,10 +161,10 @@ namespace ScavengerHunt_API.Controllers
             Group newgrp;
 
             email = ExtMethods.GetCurrentUser(HttpContext);
-            if (email is "") { return BadRequest("User not logged in"); }
+            if (email is "") { return Unauthorized("User not logged in"); }
 
             user = await userRepo.GetByEmailAsync(email);
-            if (user == null) { return NotFound("User not found"); }
+            if (user == null) { return Unauthorized("User not found"); }
 
             grp = await groupRepo.GetAsync(id);
             if (grp == null){return NotFound("Group not found");}
