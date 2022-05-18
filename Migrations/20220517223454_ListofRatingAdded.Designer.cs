@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ScavengerHunt_API.Data;
 
@@ -11,9 +12,10 @@ using ScavengerHunt_API.Data;
 namespace ScavengerHunt_API.Migrations
 {
     [DbContext(typeof(ScavengerHunt_APIContext))]
-    partial class ScavengerHunt_APIContextModelSnapshot : ModelSnapshot
+    [Migration("20220517223454_ListofRatingAdded")]
+    partial class ListofRatingAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,13 +47,13 @@ namespace ScavengerHunt_API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<double>("Latitude")
-                        .HasColumnType("float");
-
                     b.Property<int>("LocationId")
                         .HasColumnType("int");
 
-                    b.Property<double>("Longitude")
+                    b.Property<double>("latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("longitude")
                         .HasColumnType("float");
 
                     b.HasKey("Id");
@@ -85,7 +87,7 @@ namespace ScavengerHunt_API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UniqueId")
+                    b.Property<Guid>("uniqueId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -163,9 +165,8 @@ namespace ScavengerHunt_API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Ratings")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Ratings")
+                        .HasColumnType("int");
 
                     b.Property<string>("Tags")
                         .IsRequired()

@@ -2,7 +2,7 @@
 {
     public record struct CoordinateDto
     {
-        public double latitude { get; set; }
-        public double longitude { get; set; }
+        public double Latitude { get; init; }
+        public double Longitude { get; init; }
     }
 }

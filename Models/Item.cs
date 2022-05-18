@@ -1,6 +1,6 @@
 namespace ScavengerHunt_API.Models
 {
-    public class Item
+    public record class Item
     {
         public int Id { get; set; }
         public string Name { get; set; }

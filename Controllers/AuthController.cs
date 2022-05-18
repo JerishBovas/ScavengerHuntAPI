@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using ScavengerHunt_API.DTOs;
+using ScavengerHunt_API.Library;
 using ScavengerHunt_API.Models;
 using ScavengerHunt_API.Services;
 using System.IdentityModel.Tokens.Jwt;
@@ -15,15 +16,16 @@ namespace ScavengerHunt_API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IGenericRepository<User> userRepo;
+        private readonly IUserRepository userRepo;
         private readonly IConfiguration configuration;
 
-        public AuthController(IConfiguration configuration, IGenericRepository<User> user)
+        public AuthController(IConfiguration configuration, IUserRepository user)
         {
             this.configuration = configuration;
             userRepo = user;
         }
 
+        //POST: /security/register
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<ActionResult> Register(RegisterDto request)
@@ -34,11 +36,16 @@ namespace ScavengerHunt_API.Controllers
             {
                 return BadRequest(ModelState);
             }
+            if (userRepo.CheckEmailAsync(request.Email) is not null)
+            {
+                ModelState.AddModelError("Email", "Email already Exist");
+                return BadRequest(ModelState);
+            }
 
             CreatePassword(request.Password, out byte[] passwordHash, out byte[] salt);
 
             user.Name = request.Name;
-            user.Email = request.Email;
+            user.Email = request.Email.ToLower();
             user.PasswordHash = passwordHash;
             user.PasswordSalt = salt;
             user.UserLog = new UserLog();
@@ -50,20 +57,20 @@ namespace ScavengerHunt_API.Controllers
             }
             catch(Exception e)
             {
-                return BadRequest(e);
+                return BadRequest(e.Message);
             }
 
             return Ok();
         }
 
+        //POST: /security/login
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login(LoginDto request)
         {
-            List<User> users = await userRepo.GetAllAsync();
-            User? user = users.SingleOrDefault(x => x.Email == request.Email);
+            User? user = await userRepo.GetByEmailAsync(request.Email);
 
-            if(user == null)
+            if (user == null)
             {
                 return NotFound("Email not found");
             }
@@ -73,32 +80,90 @@ namespace ScavengerHunt_API.Controllers
                 return NotFound("Password is incorrect");
             }
 
-            string token = CreateToken(user);
+            string token = ExtMethods.GenerateToken(user, configuration);
 
             return Ok(token);
         }
 
-        private string CreateToken(User user)
+        //PUT: /security/resetpassword
+        [Authorize]
+        [HttpPut("resetpassword")]
+        public async Task<ActionResult> ResetPassword(LoginDto res)
         {
-            List<Claim> claims = new()
+            string currentUser = ExtMethods.GetCurrentUser(HttpContext);
+            if (!ModelState.IsValid)
             {
-                new Claim(ClaimTypes.Name, user.Name),
-                new Claim(ClaimTypes.Email, user.Email),
-            };
+                return BadRequest(ModelState);
+            }
 
-            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
-                configuration.GetSection("AppSettings:Token").Value));
+            if (currentUser == "")
+            {
+                ModelState.AddModelError("Authentication", "User is not authenticated");
+                return BadRequest(ModelState);
+            }
 
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            User? user = await userRepo.GetByEmailAsync(currentUser);
+            if(user == null)
+            {
+                return NotFound("User not found");
+            }
 
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: cred);
+            CreatePassword(res.Password, out byte[] passwordHash, out byte[] salt);
 
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+            user.PasswordHash = passwordHash;
+            user.PasswordSalt = salt;
 
-            return jwt;
+            try
+            {
+                userRepo.UpdateAsync(user);
+                await userRepo.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+            return Ok();
+        }
+
+        //PUT: /security/changename
+        [Authorize]
+        [HttpPut("changename")]
+        public async Task<ActionResult> ChangeName(RegisterDto res)
+        {
+            string currentUser = ExtMethods.GetCurrentUser(HttpContext);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (currentUser == "")
+            {
+                ModelState.AddModelError("Authentication", "User is not authenticated");
+                return BadRequest(ModelState);
+            }
+            User? user = await userRepo.GetByEmailAsync(currentUser);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            if (VerifyPassword(res.Password, user.PasswordHash, user.PasswordSalt))
+            {
+                user.Name = res.Name;
+            }
+
+            try
+            {
+                userRepo.UpdateAsync(user);
+                await userRepo.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+            return Ok();
         }
 
         private void CreatePassword(string password, out byte[] passwordHash, out byte[] passwordSalt)

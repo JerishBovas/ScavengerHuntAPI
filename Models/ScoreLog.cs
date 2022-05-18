@@ -1,6 +1,6 @@
 ﻿namespace ScavengerHunt_API.Models
 {
-    public class ScoreLog
+    public record class ScoreLog
     {
         public int Id { get; set; }
         public DateTime DatePlayed { get; set; }
