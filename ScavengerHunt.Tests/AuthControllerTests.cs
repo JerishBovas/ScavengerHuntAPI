@@ -1,6 +1,6 @@
 namespace ScavengerHunt_API.Tests
 {
-    public class UnitTest1
+    public class AuthControllerTests
     {
         [Fact]
         public void Test1()

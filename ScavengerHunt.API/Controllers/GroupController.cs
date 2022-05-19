@@ -14,11 +14,13 @@ namespace ScavengerHunt.Controllers
     {
         private readonly IGroupRepository groupRepo;
         private readonly IUserRepository userRepo;
+        private readonly ILogger<GroupController> logger;
 
-        public GroupController(IGroupRepository groupRepo, IUserRepository userRepo)
+        public GroupController(IGroupRepository groupRepo, IUserRepository userRepo, ILogger<GroupController> logger)
         {
             this.groupRepo = groupRepo;
             this.userRepo = userRepo;
+            this.logger = logger;
         }
 
         // GET: api/group

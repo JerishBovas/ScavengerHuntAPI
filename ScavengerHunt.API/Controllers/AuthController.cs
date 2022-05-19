@@ -18,11 +18,13 @@ namespace ScavengerHunt.Controllers
     {
         private readonly IUserRepository userRepo;
         private readonly IConfiguration configuration;
+        private readonly ILogger<AuthController> logger;
 
-        public AuthController(IConfiguration configuration, IUserRepository user)
+        public AuthController(IConfiguration configuration, IUserRepository user, ILogger<AuthController> logger)
         {
             this.configuration = configuration;
             userRepo = user;
+            this.logger = logger;
         }
 
         //POST: /security/register

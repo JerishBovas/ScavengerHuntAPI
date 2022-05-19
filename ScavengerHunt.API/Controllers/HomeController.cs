@@ -16,10 +16,12 @@ namespace ScavengerHunt.Controllers
     public class HomeController : ControllerBase
     {
         private readonly IUserRepository userRepo;
+        private readonly ILogger<HomeController> logger;
 
-        public HomeController(IUserRepository user)
+        public HomeController(IUserRepository user, ILogger<HomeController> logger)
         {
             userRepo = user;
+            this.logger = logger;
         }
 
         //GET /home

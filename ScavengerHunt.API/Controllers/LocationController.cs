@@ -16,11 +16,13 @@ namespace ScavengerHunt.Controllers
     {
         private readonly ILocationRepository locRepo;
         private readonly IUserRepository userRepo;
+        private readonly ILogger<LocationController> logger;
 
-        public LocationController(ILocationRepository locRepo, IUserRepository userRepo)
+        public LocationController(ILocationRepository locRepo, IUserRepository userRepo, ILogger<LocationController> logger)
         {
             this.locRepo = locRepo;
             this.userRepo = userRepo;
+            this.logger = logger;
         }
 
         // GET: api/Location
