@@ -1,8 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace ScavengerHunt.Models
+﻿namespace ScavengerHunt.API.Models
 {
-    public record class Coordinate
+    public record Coordinate
     {
         public int Id { get; set; }
         public double Latitude { get; set; }

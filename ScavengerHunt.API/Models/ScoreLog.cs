@@ -1,9 +1,9 @@
-﻿namespace ScavengerHunt.Models
+﻿namespace ScavengerHunt.API.Models
 {
-    public record class ScoreLog
+    public record ScoreLog
     {
         public int Id { get; set; }
-        public DateTime DatePlayed { get; set; }
+        public DateTimeOffset DatePlayed { get; set; }
         public string LocationName { get; set; }
         public int Score { get; set; }
         public UserLog? UserLog { get; set; }

@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using ScavengerHunt.Data;
+using ScavengerHunt.API.Data;
 
 #nullable disable
 
-namespace ScavengerHunt.Migrations
+namespace ScavengerHunt.API.Migrations
 {
     [DbContext(typeof(ScavengerHuntContext))]
     [Migration("20220513005456_UserLogUpdateandIdFix")]
@@ -54,7 +54,7 @@ namespace ScavengerHunt.Migrations
                     b.ToTable("GroupUser");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Coordinate", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Coordinate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -79,7 +79,7 @@ namespace ScavengerHunt.Migrations
                     b.ToTable("Coordinates");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Group", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Group", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -110,7 +110,7 @@ namespace ScavengerHunt.Migrations
                     b.ToTable("Groups");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Item", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Item", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -144,7 +144,7 @@ namespace ScavengerHunt.Migrations
                     b.ToTable("Items");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Location", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Location", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -197,7 +197,7 @@ namespace ScavengerHunt.Migrations
                     b.ToTable("Locations");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Room", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Room", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -223,7 +223,7 @@ namespace ScavengerHunt.Migrations
                     b.ToTable("Rooms");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.ScoreLog", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.ScoreLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -256,7 +256,7 @@ namespace ScavengerHunt.Migrations
                     b.ToTable("ScoreLogs");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.User", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -285,7 +285,7 @@ namespace ScavengerHunt.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.UserLog", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.UserLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -312,13 +312,13 @@ namespace ScavengerHunt.Migrations
 
             modelBuilder.Entity("GroupLocation", b =>
                 {
-                    b.HasOne("ScavengerHunt.Models.Group", null)
+                    b.HasOne("ScavengerHunt.API.Models.Group", null)
                         .WithMany()
                         .HasForeignKey("GroupsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ScavengerHunt.Models.Location", null)
+                    b.HasOne("ScavengerHunt.API.Models.Location", null)
                         .WithMany()
                         .HasForeignKey("LocationsId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -327,33 +327,33 @@ namespace ScavengerHunt.Migrations
 
             modelBuilder.Entity("GroupUser", b =>
                 {
-                    b.HasOne("ScavengerHunt.Models.Group", null)
+                    b.HasOne("ScavengerHunt.API.Models.Group", null)
                         .WithMany()
                         .HasForeignKey("GroupsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ScavengerHunt.Models.User", null)
+                    b.HasOne("ScavengerHunt.API.Models.User", null)
                         .WithMany()
                         .HasForeignKey("MembersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Coordinate", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Coordinate", b =>
                 {
-                    b.HasOne("ScavengerHunt.Models.Location", "Location")
+                    b.HasOne("ScavengerHunt.API.Models.Location", "Location")
                         .WithOne("Coordinate")
-                        .HasForeignKey("ScavengerHunt.Models.Coordinate", "LocationId")
+                        .HasForeignKey("ScavengerHunt.API.Models.Coordinate", "LocationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Location");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Item", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Item", b =>
                 {
-                    b.HasOne("ScavengerHunt.Models.Room", "Room")
+                    b.HasOne("ScavengerHunt.API.Models.Room", "Room")
                         .WithMany("Items")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -362,9 +362,9 @@ namespace ScavengerHunt.Migrations
                     b.Navigation("Room");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Location", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Location", b =>
                 {
-                    b.HasOne("ScavengerHunt.Models.User", "User")
+                    b.HasOne("ScavengerHunt.API.Models.User", "User")
                         .WithMany("Locations")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -373,9 +373,9 @@ namespace ScavengerHunt.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Room", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Room", b =>
                 {
-                    b.HasOne("ScavengerHunt.Models.Location", "Location")
+                    b.HasOne("ScavengerHunt.API.Models.Location", "Location")
                         .WithMany("Rooms")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -384,13 +384,13 @@ namespace ScavengerHunt.Migrations
                     b.Navigation("Location");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.ScoreLog", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.ScoreLog", b =>
                 {
-                    b.HasOne("ScavengerHunt.Models.Group", "Group")
+                    b.HasOne("ScavengerHunt.API.Models.Group", "Group")
                         .WithMany("PastWinners")
                         .HasForeignKey("GroupId");
 
-                    b.HasOne("ScavengerHunt.Models.UserLog", "UserLog")
+                    b.HasOne("ScavengerHunt.API.Models.UserLog", "UserLog")
                         .WithMany("ScoreLog")
                         .HasForeignKey("UserLogId");
 
@@ -399,23 +399,23 @@ namespace ScavengerHunt.Migrations
                     b.Navigation("UserLog");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.UserLog", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.UserLog", b =>
                 {
-                    b.HasOne("ScavengerHunt.Models.User", "User")
+                    b.HasOne("ScavengerHunt.API.Models.User", "User")
                         .WithOne("UserLog")
-                        .HasForeignKey("ScavengerHunt.Models.UserLog", "UserId")
+                        .HasForeignKey("ScavengerHunt.API.Models.UserLog", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Group", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Group", b =>
                 {
                     b.Navigation("PastWinners");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Location", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Location", b =>
                 {
                     b.Navigation("Coordinate")
                         .IsRequired();
@@ -423,12 +423,12 @@ namespace ScavengerHunt.Migrations
                     b.Navigation("Rooms");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.Room", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.Room", b =>
                 {
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.User", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.User", b =>
                 {
                     b.Navigation("Locations");
 
@@ -436,7 +436,7 @@ namespace ScavengerHunt.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("ScavengerHunt.Models.UserLog", b =>
+            modelBuilder.Entity("ScavengerHunt.API.Models.UserLog", b =>
                 {
                     b.Navigation("ScoreLog");
                 });

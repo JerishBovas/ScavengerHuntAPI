@@ -1,14 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using ScavengerHunt.DTOs;
-using ScavengerHunt.Library;
-using ScavengerHunt.Models;
-using ScavengerHunt.Services;
+using ScavengerHunt.API.DTOs;
+using ScavengerHunt.API.Library;
+using ScavengerHunt.API.Models;
+using ScavengerHunt.API.Services;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
-namespace ScavengerHunt.Controllers
+namespace ScavengerHunt.API.Controllers
 {
     [Route("api/location")]
     [ApiController]
@@ -104,15 +102,11 @@ namespace ScavengerHunt.Controllers
         [HttpPost]
         public async Task<ActionResult> Create([FromBody] LocationDto res)
         {
-            string email;
             User? user;
             Location newloc;
 
-            email = ExtMethods.GetCurrentUser(HttpContext);
-            if (email is ""){return BadRequest("User not logged in");}
-
-            user = await userRepo.GetByEmailAsync(email);
-            if (user == null){return NotFound("User not found");}
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            if (user == null){return NotFound("User does not exist");}
 
             newloc = new()
             {
@@ -122,7 +116,7 @@ namespace ScavengerHunt.Controllers
                 Address = res.Address,
                 UserId = user.Id,
                 User = user,
-                Coordinate = new()
+                Coordinate = new Coordinate()
                 {
                     Latitude = res.Coordinate.Latitude,
                     Longitude = res.Coordinate.Longitude,
@@ -132,8 +126,8 @@ namespace ScavengerHunt.Controllers
                 Difficulty = res.Difficulty,
                 Ratings = "",
                 Tags = res.Tags,
-                CreatedDate = DateTime.Now,
-                LastUpdated = DateTime.Now
+                CreatedDate = DateTimeOffset.UtcNow,
+                LastUpdated = DateTimeOffset.UtcNow,
             };
 
             try
@@ -153,22 +147,19 @@ namespace ScavengerHunt.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(int id, [FromBody] LocationDto res)
         {
-            string email;
             User? user;
             Location? loc;
+            Location newloc;
 
-            email = ExtMethods.GetCurrentUser(HttpContext);
-            if (email is "") { return BadRequest("User not logged in"); }
-
-            user = await userRepo.GetByEmailAsync(email);
-            if (user == null) { return NotFound("User not found"); }
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            if (user == null) { return NotFound("User does not exist"); }
 
             loc = await locRepo.GetAsync(id);
             if (loc == null){ return NotFound("Location not found");}
 
             if(user.Id != loc.UserId){ return Forbid("You dont have access");}
 
-            Location newloc = loc with
+            newloc = loc with
             {
                 IsPrivate = res.IsPrivate,
                 Name = res.Name,
@@ -203,15 +194,11 @@ namespace ScavengerHunt.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
-            string email;
             User? user;
             Location? newloc;
 
-            email = ExtMethods.GetCurrentUser(HttpContext);
-            if (email is "") { return BadRequest("User not logged in"); }
-
-            user = await userRepo.GetByEmailAsync(email);
-            if (user == null) { return NotFound("User not found"); }
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            if (user == null) { return NotFound("User does not exist"); }
 
             newloc = await locRepo.GetAsync(id);
             if (newloc == null) { return NotFound("Location not found"); }

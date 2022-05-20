@@ -1,6 +1,6 @@
-﻿namespace ScavengerHunt.API.Models
+﻿namespace ScavengerHunt.API.DTOs
 {
-    public record Item
+    public record struct ItemDto
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -8,6 +8,5 @@
         public string ItemLocation { get; set; }
         public string ImageName { get; set; }
         public int RoomId { get; set; }
-        public Room Room { get; set; }
     }
 }

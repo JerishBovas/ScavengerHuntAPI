@@ -2,25 +2,27 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using ScavengerHunt.DTOs;
-using ScavengerHunt.Library;
-using ScavengerHunt.Models;
-using ScavengerHunt.Services;
+using ScavengerHunt.API.DTOs;
+using ScavengerHunt.API.Library;
+using ScavengerHunt.API.Models;
+using ScavengerHunt.API.Services;
 using System.Collections.Generic;
 using System.Security.Claims;
 
-namespace ScavengerHunt.Controllers
+namespace ScavengerHunt.API.Controllers
 {
     [Route("api/home")]
     [ApiController]
     public class HomeController : ControllerBase
     {
         private readonly IUserRepository userRepo;
+        private readonly IScoreLogRepository scoreLogRepo;
         private readonly ILogger<HomeController> logger;
 
-        public HomeController(IUserRepository user, ILogger<HomeController> logger)
+        public HomeController(IUserRepository user, ILogger<HomeController> logger, IScoreLogRepository scoreLog)
         {
             userRepo = user;
+            scoreLogRepo = scoreLog;
             this.logger = logger;
         }
 
@@ -29,21 +31,24 @@ namespace ScavengerHunt.Controllers
         [HttpGet("")]
         public async Task<ActionResult> GetInfo()
         {
-            string email;
             User? user;
             UserDto userdt;
 
-            email = ExtMethods.GetCurrentUser(HttpContext);
-            if (email is ""){return BadRequest("User not logged in");}
-
-            user = await userRepo.GetByEmailAsync(email);
-            if (user == null){return NotFound("User not found");}
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            if (user is null){return NotFound("User does not exist");}
 
             userdt = new()
             {
                 Id = user.Id,
                 Name = user.Name,
-                Email = user.Email
+                Email = user.Email,
+                UserLog = new UserLogDto()
+                {
+                    Id = user.UserLog.Id,
+                    UserEmail = user.Email,
+                    UserScore = user.UserLog.UserScore,
+                    LastUpdated = user.UserLog.LastUpdated,
+                }
             };
 
             return Content(JsonConvert.SerializeObject(userdt, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
@@ -51,27 +56,19 @@ namespace ScavengerHunt.Controllers
 
         //GET /home/userlog
         [Authorize]
-        [HttpGet("userlog")]
-        public async Task<ActionResult> GetUserLog()
+        [HttpGet("scores")]
+        public async Task<ActionResult> GetScoreLog()
         {
-            string email;
-            UserLog? userlog;
-            IEnumerable<Location> locations;
-            IEnumerable<Group> groups;
-            UserLogDto userlogdt;
+            User? user;
+            IEnumerable<ScoreLog> scoreLogList;
             List<ScoreLogDto> scoreloglist = new();
 
-            email = ExtMethods.GetCurrentUser(HttpContext);
-            if (email == ""){return BadRequest("User not logged in");}
-            if (userRepo.CheckEmailAsync(email) is null){return NotFound("User not found");}
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            if (user is null){return NotFound("User does not exist");}
 
-            userlog = await userRepo.GetUserLogAsync(email);
-            if (userlog == null) { return NoContent(); }
+            scoreLogList = await scoreLogRepo.GetScoreLogsByUser(user);
 
-            locations = await userRepo.GetLocationsAsync(email);
-            groups = await userRepo.GetGroupsAsync(email);
-
-            foreach(ScoreLog scorelog in userlog.ScoreLog)
+            foreach(var scorelog in scoreLogList)
             {
                 ScoreLogDto newdt = new()
                 {
@@ -83,17 +80,7 @@ namespace ScavengerHunt.Controllers
                 scoreloglist.Add(newdt);
             }
 
-            userlogdt = new()
-            {
-                UserEmail = email,
-                UserScore = userlog.UserScore,
-                LastUpdated = userlog.LastUpdated,
-                ScoreLog = scoreloglist,
-                MyLocations = locations.Count(),
-                MyGroups = groups.Count(),
-            };
-
-            return Content(JsonConvert.SerializeObject(userlogdt, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
+            return Content(JsonConvert.SerializeObject(scoreLogList, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
         }
     }
 }

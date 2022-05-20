@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace ScavengerHunt.Migrations
+namespace ScavengerHunt.API.Migrations
 {
     public partial class groupLocationRelationRemoved : Migration
     {

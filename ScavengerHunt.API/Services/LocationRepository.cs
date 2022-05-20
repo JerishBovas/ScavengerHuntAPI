@@ -1,13 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ScavengerHunt.Data;
-using ScavengerHunt.Models;
+using ScavengerHunt.API.Data;
+using ScavengerHunt.API.Models;
 
-namespace ScavengerHunt.Services
+namespace ScavengerHunt.API.Services
 {
     public class LocationRepository : ILocationRepository
     {
         private readonly ScavengerHuntContext context;
-        private DbSet<Location> dbSet;
+        private readonly DbSet<Location> dbSet;
+
         public LocationRepository(ScavengerHuntContext context)
         {
             this.context = context;

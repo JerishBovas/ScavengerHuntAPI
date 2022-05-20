@@ -1,23 +1,23 @@
 ﻿using Microsoft.IdentityModel.Tokens;
-using ScavengerHunt.Models;
-using ScavengerHunt.Services;
+using ScavengerHunt.API.Models;
+using ScavengerHunt.API.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace ScavengerHunt.Library
+namespace ScavengerHunt.API.Library
 {
     public static class ExtMethods
     {
-        public static string GetCurrentUser(HttpContext context)
+        public async static Task<User?> GetCurrentUser(HttpContext context, IUserRepository userRepository)
         {
             if (context.User.Identity is ClaimsIdentity identity)
             {
                 if (identity.Claims.SingleOrDefault(u => u.Type == ClaimTypes.Email)?.Value is string email)
                 {
-                    return email;
+                    return await userRepository.GetAsync(email);
                 }
             }
-            return "";
+            return null;
         }
         public static string GenerateToken(User user, IConfiguration configuration)
         {

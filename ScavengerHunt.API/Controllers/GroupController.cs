@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using ScavengerHunt.DTOs;
-using ScavengerHunt.Library;
-using ScavengerHunt.Models;
-using ScavengerHunt.Services;
+using ScavengerHunt.API.DTOs;
+using ScavengerHunt.API.Library;
+using ScavengerHunt.API.Models;
+using ScavengerHunt.API.Services;
 
-namespace ScavengerHunt.Controllers
+namespace ScavengerHunt.API.Controllers
 {
     [Route("api/group")]
     [ApiController]
@@ -14,12 +14,14 @@ namespace ScavengerHunt.Controllers
     {
         private readonly IGroupRepository groupRepo;
         private readonly IUserRepository userRepo;
+        private readonly IScoreLogRepository scoreLogRepo;
         private readonly ILogger<GroupController> logger;
 
-        public GroupController(IGroupRepository groupRepo, IUserRepository userRepo, ILogger<GroupController> logger)
+        public GroupController(IGroupRepository groupRepo, IUserRepository userRepo, ILogger<GroupController> logger, IScoreLogRepository scoreLog)
         {
             this.groupRepo = groupRepo;
             this.userRepo = userRepo;
+            scoreLogRepo = scoreLog;
             this.logger = logger;
         }
 
@@ -47,6 +49,7 @@ namespace ScavengerHunt.Controllers
                 GroupDto grpDto = new()
                 {
                     Id = group.Id,
+                    UniqueId = group.UniqueId,
                     IsOpen = group.IsOpen,
                     Title = group.Title,
                     Description = group.Description,
@@ -116,17 +119,13 @@ namespace ScavengerHunt.Controllers
         // POST api/group
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult> Create([FromBody] GroupShortDto res)
+        public async Task<ActionResult> Create([FromBody] GroupCreateDto res)
         {
-            string email;
             User? user;
             Group newgrp;
 
-            email = ExtMethods.GetCurrentUser(HttpContext);
-            if (email is ""){return Unauthorized("User not logged in");}
-
-            user = await userRepo.GetByEmailAsync(email);
-            if (user == null){return NotFound("User not found");}
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            if (user == null) { return NotFound("User not found"); }
 
             newgrp = new()
             {
@@ -134,9 +133,9 @@ namespace ScavengerHunt.Controllers
                 IsOpen = res.IsOpen,
                 Title = res.Title,
                 Description = res.Description,
-                CreatedUser = email,
-                Members = new List<User> { user},
-                PastWinners = new List<ScoreLog>()
+                CreatedUser = user.Email,
+                Members = new List<User> { user },
+                PastWinners = new List<ScoreLog>(),
             };
 
             try
@@ -155,23 +154,19 @@ namespace ScavengerHunt.Controllers
         // PUT api/group/5
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, [FromBody] GroupShortDto res)
+        public async Task<ActionResult> Update(int id, [FromBody] GroupCreateDto res)
         {
-            string email;
             User? user;
             Group? grp;
             Group newgrp;
 
-            email = ExtMethods.GetCurrentUser(HttpContext);
-            if (email is "") { return Unauthorized("User not logged in"); }
-
-            user = await userRepo.GetByEmailAsync(email);
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
             if (user == null) { return Unauthorized("User not found"); }
 
             grp = await groupRepo.GetAsync(id);
             if (grp == null){return NotFound("Group doesn't exist");}
 
-            if (grp.CreatedUser != email){return Forbid("Action only allowed by Owner");}
+            if (grp.CreatedUser != user.Email){return Forbid("Action only allowed by Owner");}
 
             newgrp = grp with
             {
@@ -198,16 +193,16 @@ namespace ScavengerHunt.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
-            string email;
+            User? user;
             Group? grp;
 
-            email = ExtMethods.GetCurrentUser(HttpContext);
-            if (email is "") { return BadRequest("User not logged in"); }
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            if (user is null) { return NotFound("User not found"); }
 
             grp = await groupRepo.GetAsync(id);
             if (grp == null) { return NotFound("Group doesn't exist"); }
 
-            if (grp.CreatedUser != email) { return Forbid("Action only allowed by Owner"); }
+            if (grp.CreatedUser != user.Email) { return Forbid("Action only allowed by Owner"); }
 
             try
             {
@@ -220,6 +215,41 @@ namespace ScavengerHunt.Controllers
             }
 
             return Ok();
+        }
+
+        //GET /home/userlog
+        [Authorize]
+        [HttpGet("scores/{id}")]
+        public async Task<ActionResult> GetScoreLog(int id)
+        {
+            User? user;
+            Group? grp;
+            IEnumerable<ScoreLog> scoreLogList;
+            List<ScoreLogDto> scoreloglist = new();
+
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            if (user is null) { return NotFound("User doesn't exist"); }
+
+            grp = await groupRepo.GetAsync(id);
+            if (grp == null) { return NotFound("Group doesn't exist"); }
+
+            if (grp.CreatedUser != user.Email) { return Forbid("Action only allowed by Owner"); }
+
+            scoreLogList = await scoreLogRepo.GetScoreLogsByGroup(grp);
+
+            foreach (var scorelog in scoreLogList)
+            {
+                ScoreLogDto newdt = new()
+                {
+                    Id = scorelog.Id,
+                    DatePlayed = scorelog.DatePlayed,
+                    LocationName = scorelog.LocationName,
+                    Score = scorelog.Score,
+                };
+                scoreloglist.Add(newdt);
+            }
+
+            return Content(JsonConvert.SerializeObject(scoreLogList, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
         }
     }
 }

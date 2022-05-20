@@ -3,7 +3,6 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ScavengerHunt.API.Data;
 
@@ -12,10 +11,9 @@ using ScavengerHunt.API.Data;
 namespace ScavengerHunt.API.Migrations
 {
     [DbContext(typeof(ScavengerHuntContext))]
-    [Migration("20220513005809_UserLogUpdateName")]
-    partial class UserLogUpdateName
+    partial class ScavengerHuntContextModelSnapshot : ModelSnapshot
     {
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -23,21 +21,6 @@ namespace ScavengerHunt.API.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
-
-            modelBuilder.Entity("GroupLocation", b =>
-                {
-                    b.Property<int>("GroupsId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("LocationsId")
-                        .HasColumnType("int");
-
-                    b.HasKey("GroupsId", "LocationsId");
-
-                    b.HasIndex("LocationsId");
-
-                    b.ToTable("GroupLocation");
-                });
 
             modelBuilder.Entity("GroupUser", b =>
                 {
@@ -62,13 +45,13 @@ namespace ScavengerHunt.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
+                    b.Property<double>("Latitude")
+                        .HasColumnType("float");
+
                     b.Property<int>("LocationId")
                         .HasColumnType("int");
 
-                    b.Property<double>("latitude")
-                        .HasColumnType("float");
-
-                    b.Property<double>("longitude")
+                    b.Property<double>("Longitude")
                         .HasColumnType("float");
 
                     b.HasKey("Id");
@@ -102,7 +85,7 @@ namespace ScavengerHunt.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("uniqueId")
+                    b.Property<Guid>("UniqueId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -180,8 +163,9 @@ namespace ScavengerHunt.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Ratings")
-                        .HasColumnType("int");
+                    b.Property<string>("Ratings")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Tags")
                         .IsRequired()
@@ -205,12 +189,12 @@ namespace ScavengerHunt.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int>("LocationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("LocationTitle")
+                    b.Property<string>("Details")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("LocationId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -231,8 +215,8 @@ namespace ScavengerHunt.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<DateTime>("DatePlayed")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("DatePlayed")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<int?>("GroupId")
                         .HasColumnType("int");
@@ -293,8 +277,8 @@ namespace ScavengerHunt.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("LastUpdated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -308,21 +292,6 @@ namespace ScavengerHunt.API.Migrations
                         .IsUnique();
 
                     b.ToTable("UserLogs");
-                });
-
-            modelBuilder.Entity("GroupLocation", b =>
-                {
-                    b.HasOne("ScavengerHunt.API.Models.Group", null)
-                        .WithMany()
-                        .HasForeignKey("GroupsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ScavengerHunt.API.Models.Location", null)
-                        .WithMany()
-                        .HasForeignKey("LocationsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("GroupUser", b =>

@@ -1,12 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace ScavengerHunt.Models
+﻿namespace ScavengerHunt.API.Models
 {
-    public record class UserLog
+    public record UserLog
     {
         public int Id { get; set; }
-        public int UserScore { get; set; } = 0;
-        public DateTime LastUpdated { get; set; } = DateTime.Now;
+        public int UserScore { get; set; }
+        public DateTimeOffset LastUpdated { get; set; }
         public int UserId { get; set; }
         public User User { get; set; }
         public ICollection<ScoreLog> ScoreLog { get; set; } = new List<ScoreLog>();

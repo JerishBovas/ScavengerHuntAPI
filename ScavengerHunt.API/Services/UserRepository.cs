@@ -1,15 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ScavengerHunt.Data;
-using ScavengerHunt.Models;
-using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
+using ScavengerHunt.API.Data;
+using ScavengerHunt.API.Models;
 
-namespace ScavengerHunt.Services
+namespace ScavengerHunt.API.Services
 {
     public class UserRepository : IUserRepository
     {
         private readonly ScavengerHuntContext context;
-        private DbSet<User> dbSet;
+        private readonly DbSet<User> dbSet;
+
         public UserRepository(ScavengerHuntContext context)
         {
             this.context = context;
@@ -21,70 +20,12 @@ namespace ScavengerHunt.Services
             return await dbSet.ToListAsync();
         }
 
-        public async Task<User?> GetAsync(int id)
-        {
-            return await dbSet.FindAsync(id);
-        }
-
-        public async Task<string> CheckEmailAsync(string email)
-        {
-            User? user = await dbSet
-                .Where(x => x.Email == email)
-                .SingleOrDefaultAsync();
-            if(user is null)
-            {
-                return "";
-            }
-            return email;
-        }
-
-        public async Task<User?> GetByEmailAsync(string email)
+        public async Task<User?> GetAsync(string email)
         {
             return await dbSet
                 .Where(s => s.Email == email)
-                .FirstOrDefaultAsync();
-        }
-
-        public async Task<UserLog?> GetUserLogAsync(string email)
-        {
-            User? user = await dbSet
-                .Where(e => e.Email == email)
                 .Include(u => u.UserLog)
-                .ThenInclude(ul => ul.ScoreLog)
-                .Include(l => l.Locations)
-                .Include(g => g.Groups)
                 .FirstOrDefaultAsync();
-            if(user != null)
-            {
-                return user.UserLog;
-            }
-            return null;
-        }
-
-        public async Task<IEnumerable<Location>> GetLocationsAsync(string email)
-        {
-            User? user = await dbSet
-                .Where(e => e.Email == email)
-                .Include(u => u.Locations)
-                .FirstOrDefaultAsync();
-            if (user != null)
-            {
-                return user.Locations.ToList();
-            }
-            return new List<Location>();
-        }
-
-        public async Task<IEnumerable<Group>> GetGroupsAsync(string email)
-        {
-            User? user = await dbSet
-                .Where(e => e.Email == email)
-                .Include(u => u.Groups)
-                .FirstOrDefaultAsync();
-            if (user != null)
-            {
-                return user.Groups.ToList();
-            }
-            return new List<Group>();
         }
 
         public async Task CreateAsync(User entity)
@@ -99,7 +40,7 @@ namespace ScavengerHunt.Services
 
         public async void DeleteAsync(string email)
         {
-            User? entity = await GetByEmailAsync(email);
+            User? entity = await GetAsync(email);
             if (entity != null)
             {
                 dbSet.Remove(entity);

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace ScavengerHunt.Migrations
+namespace ScavengerHunt.API.Migrations
 {
     public partial class UserLogUpdateandIdFix : Migration
     {

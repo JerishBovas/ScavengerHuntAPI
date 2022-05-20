@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ScavengerHunt.DTOs
+namespace ScavengerHunt.API.DTOs
 {
     public record struct LoginDto
     {

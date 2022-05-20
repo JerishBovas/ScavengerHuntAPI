@@ -1,6 +1,6 @@
-﻿using ScavengerHunt.Models;
+﻿using ScavengerHunt.API.Models;
 
-namespace ScavengerHunt.Services
+namespace ScavengerHunt.API.Services
 {
     public interface ILocationRepository
     {

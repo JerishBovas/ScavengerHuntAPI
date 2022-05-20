@@ -1,16 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using ScavengerHunt.DTOs;
-using ScavengerHunt.Library;
-using ScavengerHunt.Models;
-using ScavengerHunt.Services;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+using ScavengerHunt.API.DTOs;
+using ScavengerHunt.API.Library;
+using ScavengerHunt.API.Models;
+using ScavengerHunt.API.Services;
 using System.Security.Cryptography;
 
-namespace ScavengerHunt.Controllers
+namespace ScavengerHunt.API.Controllers
 {
     [Route("api/security")]
     [ApiController]
@@ -32,25 +28,20 @@ namespace ScavengerHunt.Controllers
         [HttpPost("register")]
         public async Task<ActionResult> Register(RegisterDto request)
         {
-            User user = new();
+            User user;
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            if (userRepo.CheckEmailAsync(request.Email) is not null)
-            {
-                ModelState.AddModelError("Email", "Email already Exist");
-                return BadRequest(ModelState);
-            }
+            if (!ModelState.IsValid){ return BadRequest(ModelState);}
+            if (userRepo.GetAsync(request.Email) is not null){ return BadRequest("Email already Exist");}
 
             CreatePassword(request.Password, out byte[] passwordHash, out byte[] salt);
 
-            user.Name = request.Name;
-            user.Email = request.Email.ToLower();
-            user.PasswordHash = passwordHash;
-            user.PasswordSalt = salt;
-            user.UserLog = new UserLog();
+            user = new()
+            {
+                Name = request.Name,
+                Email = request.Email.ToLower(),
+                PasswordHash = passwordHash,
+                PasswordSalt = salt,
+            };
 
             try
             {
@@ -70,12 +61,9 @@ namespace ScavengerHunt.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login(LoginDto request)
         {
-            User? user = await userRepo.GetByEmailAsync(request.Email);
+            User? user = await userRepo.GetAsync(request.Email);
 
-            if (user == null)
-            {
-                return NotFound("Email not found");
-            }
+            if (user == null){ return NotFound("Email not found");}
 
             if(!VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
             {
@@ -92,20 +80,12 @@ namespace ScavengerHunt.Controllers
         [HttpPut("resetpassword")]
         public async Task<ActionResult> ResetPassword(LoginDto res)
         {
-            string currentUser = ExtMethods.GetCurrentUser(HttpContext);
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            User? user;
 
-            if (currentUser == "")
-            {
-                ModelState.AddModelError("Authentication", "User is not authenticated");
-                return BadRequest(ModelState);
-            }
+            if (!ModelState.IsValid){ return BadRequest(ModelState); }
 
-            User? user = await userRepo.GetByEmailAsync(currentUser);
-            if(user == null)
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            if (user is null)
             {
                 return NotFound("User not found");
             }
@@ -133,18 +113,14 @@ namespace ScavengerHunt.Controllers
         [HttpPut("changename")]
         public async Task<ActionResult> ChangeName(RegisterDto res)
         {
-            string currentUser = ExtMethods.GetCurrentUser(HttpContext);
+            User? user;
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (currentUser == "")
-            {
-                ModelState.AddModelError("Authentication", "User is not authenticated");
-                return BadRequest(ModelState);
-            }
-            User? user = await userRepo.GetByEmailAsync(currentUser);
+            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
             if (user == null)
             {
                 return NotFound("User not found");
@@ -168,22 +144,18 @@ namespace ScavengerHunt.Controllers
             return Ok();
         }
 
-        private void CreatePassword(string password, out byte[] passwordHash, out byte[] passwordSalt)
+        private static void CreatePassword(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
-            using (var hmac = new HMACSHA512())
-            {
-                passwordSalt = hmac.Key;
-                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-            }
+            using var hmac = new HMACSHA512();
+            passwordSalt = hmac.Key;
+            passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
         }
 
-        private bool VerifyPassword(string password, byte[] passwordHash, byte[] passwordSalt)
+        private static bool VerifyPassword(string password, byte[] passwordHash, byte[] passwordSalt)
         {
-            using (var hmac = new HMACSHA512(passwordSalt))
-            {
-                var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-                return computedHash.SequenceEqual(passwordHash);
-            }
+            using var hmac = new HMACSHA512(passwordSalt);
+            var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+            return computedHash.SequenceEqual(passwordHash);
         }
     }
 }

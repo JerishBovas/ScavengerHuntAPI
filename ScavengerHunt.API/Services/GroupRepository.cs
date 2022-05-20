@@ -1,13 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ScavengerHunt.Data;
-using ScavengerHunt.Models;
+using ScavengerHunt.API.Data;
+using ScavengerHunt.API.Models;
 
-namespace ScavengerHunt.Services
+namespace ScavengerHunt.API.Services
 {
     public class GroupRepository : IGroupRepository
     {
         private readonly ScavengerHuntContext context;
-        private DbSet<Group> dbSet;
+        private readonly DbSet<Group> dbSet;
+
         public GroupRepository(ScavengerHuntContext context)
         {
             this.context = context;
