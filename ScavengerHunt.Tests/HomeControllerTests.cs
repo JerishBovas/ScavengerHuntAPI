@@ -1,5 +1,5 @@
 ﻿using System;
-namespace ScavengerHunt.API.Tests;
+namespace ScavengerHunt.Tests;
 
 public class HomeControllerTests
 {

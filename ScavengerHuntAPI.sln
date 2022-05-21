@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32421.90
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScavengerHunt.API", "ScavengerHunt.API\ScavengerHunt.API.csproj", "{242A99D1-91FE-4D1B-8E63-7BA4E2F652C7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScavengerHunt", "ScavengerHunt\ScavengerHunt.csproj", "{242A99D1-91FE-4D1B-8E63-7BA4E2F652C7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScavengerHunt.Tests", "ScavengerHunt.Tests\ScavengerHunt.Tests.csproj", "{3D091943-64B0-499B-8BCD-EE2B5B4142F2}"
 EndProject

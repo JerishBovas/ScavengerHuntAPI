@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Moq;
-using ScavengerHunt.API.Controllers;
-using ScavengerHunt.API.Services;
+using ScavengerHunt.Controllers;
+using ScavengerHunt.Services;
 
 namespace ScavengerHunt_API.Tests
 {

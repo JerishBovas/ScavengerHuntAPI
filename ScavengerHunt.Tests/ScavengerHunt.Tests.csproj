@@ -25,7 +25,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\ScavengerHunt.API\ScavengerHunt.API.csproj" />
+		<ProjectReference Include="..\ScavengerHunt\ScavengerHunt.csproj" />
 	</ItemGroup>
 
 </Project>
