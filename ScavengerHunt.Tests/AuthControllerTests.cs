@@ -16,7 +16,6 @@ namespace ScavengerHunt_API.Tests
             //Arrange
 
 
-
             //Act
 
             //Assert

@@ -31,7 +31,7 @@ namespace ScavengerHunt.Controllers
             User user;
 
             if (!ModelState.IsValid){ return BadRequest(ModelState);}
-            if (userRepo.GetAsync(request.Email) is not null){ return BadRequest("Email already Exist");}
+            if (await userRepo.GetAsync(request.Email) is not null){ return BadRequest("Email already Exist");}
 
             CreatePassword(request.Password, out byte[] passwordHash, out byte[] salt);
 
@@ -53,7 +53,7 @@ namespace ScavengerHunt.Controllers
                 return BadRequest(e.Message);
             }
 
-            return Ok();
+            return CreatedAtAction(nameof(Register), new { user.Name, user.Email, user.Id});
         }
 
         //POST: /security/login
