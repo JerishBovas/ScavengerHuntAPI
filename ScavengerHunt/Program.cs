@@ -9,8 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddDbContext<ScavengerHuntContext>(options =>
     options.UseCosmos(
-        builder.Configuration.GetConnectionString("ScavengerHunt"),
-        databaseName: builder.Configuration.GetConnectionString("DBName")
+        builder.Configuration["ScavengerHunt_ENDPOINT"],
+        builder.Configuration["ScavengerHunt_MASTER_KEY"],
+        databaseName: builder.Configuration["ScavengerHunt_DATABASE_ID"]
     )
 );
 builder.Services.AddHttpClient();
