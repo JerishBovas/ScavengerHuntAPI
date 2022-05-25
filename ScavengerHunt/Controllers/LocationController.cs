@@ -51,7 +51,6 @@ namespace ScavengerHunt.Controllers
                     Name = loc.Name,
                     Description = loc.Description,
                     Address = loc.Address,
-                    UserId = loc.UserId,
                     Coordinate = new CoordinateDto()
                     {
                         Latitude = loc.Coordinate.Latitude,
@@ -71,7 +70,7 @@ namespace ScavengerHunt.Controllers
         // GET api/Location/5
         [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult> Get(int id)
+        public async Task<ActionResult> Get(Guid id)
         {
             Location? loc;
             LocationDetailDto locdto;
@@ -86,7 +85,6 @@ namespace ScavengerHunt.Controllers
                 {
                     RoomDto roomDto = new()
                     {
-                        Id = room.Id,
                         Name = room.Name,
                         Details = room.Details,
                     };
@@ -101,7 +99,6 @@ namespace ScavengerHunt.Controllers
                 Name = loc.Name,
                 Description = loc.Description,
                 Address = loc.Address,
-                UserId = loc.UserId,
                 Coordinate = new()
                 {
                     Latitude = loc.Coordinate.Latitude,
@@ -120,7 +117,7 @@ namespace ScavengerHunt.Controllers
         // POST api/Location
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult> Create([FromBody] LocationDto res)
+        public async Task<ActionResult> Create([FromBody] LocationCreateDto res)
         {
             User? user;
             Location newloc;
@@ -136,7 +133,6 @@ namespace ScavengerHunt.Controllers
                 Description = res.Description,
                 Address = res.Address,
                 UserId = user.Id,
-                User = user,
                 Coordinate = new Coordinate()
                 {
                     Latitude = res.Coordinate.Latitude,
@@ -145,7 +141,7 @@ namespace ScavengerHunt.Controllers
                 Rooms = new List<Room>(),
                 ImageName = res.ImageName,
                 Difficulty = res.Difficulty,
-                Ratings = "",
+                Ratings = new List<int>(),
                 Tags = res.Tags,
                 CreatedDate = DateTimeOffset.UtcNow,
                 LastUpdated = DateTimeOffset.UtcNow,
@@ -166,7 +162,7 @@ namespace ScavengerHunt.Controllers
         // PUT api/Location/5
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, [FromBody] LocationDto res)
+        public async Task<ActionResult> Update(Guid id, [FromBody] LocationCreateDto res)
         {
             User? user;
             Location? loc;
@@ -214,7 +210,7 @@ namespace ScavengerHunt.Controllers
         // DELETE api/Location/5
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> Delete(Guid id)
         {
             User? user;
             Location? newloc;

@@ -6,16 +6,17 @@ using ScavengerHunt.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ScavengerHuntContext>(options =>
-
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ScavengerHunt") ?? throw new InvalidOperationException("Connection string 'ScavengerHunt' not found.")));
-
 // Add services to the container.
-
+builder.Services.AddDbContext<ScavengerHuntContext>(options =>
+    options.UseCosmos(
+        builder.Configuration.GetConnectionString("ScavengerHunt"),
+        databaseName: builder.Configuration.GetConnectionString("DBName")
+    )
+);
+builder.Services.AddHttpClient();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IGroupRepository, GroupRepository>();
-builder.Services.AddScoped<IScoreLogRepository, ScoreLogRepository>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

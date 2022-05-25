@@ -22,7 +22,7 @@ namespace ScavengerHunt.Services
                 .ToListAsync();
         }
 
-        public async Task<Location?> GetAsync(int id)
+        public async Task<Location?> GetAsync(Guid id)
         {
             Location? loc = await dbSet
                 .Where(p => p.Id == id)

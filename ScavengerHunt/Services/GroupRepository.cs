@@ -20,11 +20,10 @@ namespace ScavengerHunt.Services
             return await dbSet.ToListAsync();
         }
 
-        public async Task<Group?> GetAsync(int id)
+        public async Task<Group?> GetAsync(Guid id)
         {
             Group? group = await dbSet
                 .Where(p => p.Id == id)
-                .Include(x => x.Members)
                 .Include(x => x.PastWinners)
                 .FirstOrDefaultAsync();
             return group;

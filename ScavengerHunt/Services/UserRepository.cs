@@ -12,6 +12,7 @@ namespace ScavengerHunt.Services
         public UserRepository(ScavengerHuntContext context)
         {
             this.context = context;
+            this.context.Database.EnsureCreatedAsync();
             dbSet = this.context.Set<User>();
         }
 

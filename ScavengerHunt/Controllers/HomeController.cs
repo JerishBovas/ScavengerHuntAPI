@@ -16,13 +16,11 @@ namespace ScavengerHunt.Controllers
     public class HomeController : ControllerBase
     {
         private readonly IUserRepository userRepo;
-        private readonly IScoreLogRepository scoreLogRepo;
         private readonly ILogger<HomeController> logger;
 
-        public HomeController(IUserRepository user, ILogger<HomeController> logger, IScoreLogRepository scoreLog)
+        public HomeController(IUserRepository user, ILogger<HomeController> logger)
         {
             userRepo = user;
-            scoreLogRepo = scoreLog;
             this.logger = logger;
         }
 
@@ -58,19 +56,15 @@ namespace ScavengerHunt.Controllers
         public async Task<ActionResult> GetScoreLog()
         {
             User? user;
-            IEnumerable<ScoreLog> scoreLogList;
             List<ScoreLogDto> scoreloglist = new();
 
             user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
             if (user is null){return NotFound("User does not exist");}
 
-            scoreLogList = await scoreLogRepo.GetScoreLogsByUser(user);
-
-            foreach(var scorelog in scoreLogList)
+            foreach(var scorelog in user.UserLog.ScoreLog)
             {
                 ScoreLogDto newdt = new()
                 {
-                    Id = scorelog.Id,
                     DatePlayed = scorelog.DatePlayed,
                     LocationName = scorelog.LocationName,
                     Score = scorelog.Score,
@@ -78,7 +72,7 @@ namespace ScavengerHunt.Controllers
                 scoreloglist.Add(newdt);
             }
 
-            return Content(JsonConvert.SerializeObject(scoreLogList, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
+            return Content(JsonConvert.SerializeObject(scoreloglist, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
         }
     }
 }

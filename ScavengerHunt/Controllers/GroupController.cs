@@ -14,14 +14,12 @@ namespace ScavengerHunt.Controllers
     {
         private readonly IGroupRepository groupRepo;
         private readonly IUserRepository userRepo;
-        private readonly IScoreLogRepository scoreLogRepo;
         private readonly ILogger<GroupController> logger;
 
-        public GroupController(IGroupRepository groupRepo, IUserRepository userRepo, ILogger<GroupController> logger, IScoreLogRepository scoreLog)
+        public GroupController(IGroupRepository groupRepo, IUserRepository userRepo, ILogger<GroupController> logger)
         {
             this.groupRepo = groupRepo;
             this.userRepo = userRepo;
-            scoreLogRepo = scoreLog;
             this.logger = logger;
         }
 
@@ -49,11 +47,9 @@ namespace ScavengerHunt.Controllers
                 GroupDto grpDto = new()
                 {
                     Id = group.Id,
-                    UniqueId = group.UniqueId,
                     IsOpen = group.IsOpen,
                     Title = group.Title,
-                    Description = group.Description,
-                    CreatedUser = group.CreatedUser,
+                    Description = group.Description
                 };
                 GroupsDto.Add(grpDto);
             }
@@ -63,7 +59,7 @@ namespace ScavengerHunt.Controllers
         // GET api/group/5
         [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult> Get(int id)
+        public async Task<ActionResult> Get(Guid id)
         {
             GroupDetailDto dto;
             Group? group;
@@ -73,19 +69,6 @@ namespace ScavengerHunt.Controllers
             group = await groupRepo.GetAsync(id);
             if (group == null){ return NotFound("Group doesn't exist");}
 
-            if (group.Members.Any())
-            {
-                foreach (var item in group.Members)
-                {
-                    UserDto ust = new()
-                    {
-                        Id = item.Id,
-                        Name = item.Name,
-                        Email = item.Email,
-                    };
-                    userdt.Add(ust);
-                }
-            }
             if (group.PastWinners.Any())
             {
                 foreach (var item in group.PastWinners)
@@ -94,8 +77,7 @@ namespace ScavengerHunt.Controllers
                     {
                         LocationName = item.LocationName,
                         DatePlayed = item.DatePlayed,
-                        Score = item.Score,
-                        Id = item.Id,
+                        Score = item.Score
 
                     };
                     scoreLog.Add(scoreLogDto);
@@ -108,8 +90,7 @@ namespace ScavengerHunt.Controllers
                 IsOpen = group.IsOpen,
                 Title = group.Title,
                 Description = group.Description,
-                CreatedUser = group.CreatedUser,
-                Members = userdt,
+                Members = group.Members,
                 PastWinners = scoreLog,
             };
 
@@ -130,12 +111,11 @@ namespace ScavengerHunt.Controllers
 
             newgrp = new()
             {
-                UniqueId = Guid.NewGuid(),
                 IsOpen = res.IsOpen,
                 Title = res.Title,
                 Description = res.Description,
-                CreatedUser = user.Email,
-                Members = new List<User> { user },
+                CreatedUserId = user.Id,
+                Members = new List<Guid> { user.Id},
                 PastWinners = new List<ScoreLog>(),
             };
 
@@ -155,7 +135,7 @@ namespace ScavengerHunt.Controllers
         // PUT api/group/5
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, [FromBody] GroupCreateDto res)
+        public async Task<ActionResult> Update(Guid id, [FromBody] GroupCreateDto res)
         {
             User? user;
             Group? grp;
@@ -168,7 +148,7 @@ namespace ScavengerHunt.Controllers
             grp = await groupRepo.GetAsync(id);
             if (grp == null){return NotFound("Group doesn't exist");}
 
-            if (grp.CreatedUser != user.Email){return Forbid("Action only allowed by Owner");}
+            if (grp.CreatedUserId != user.Id){return Forbid("Action only allowed by Owner");}
 
             newgrp = grp with
             {
@@ -193,7 +173,7 @@ namespace ScavengerHunt.Controllers
         // DELETE api/group/5
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> Delete(Guid id)
         {
             User? user;
             Group? grp;
@@ -204,7 +184,7 @@ namespace ScavengerHunt.Controllers
             grp = await groupRepo.GetAsync(id);
             if (grp == null) { return NotFound("Group doesn't exist"); }
 
-            if (grp.CreatedUser != user.Email) { return Forbid("Action only allowed by Owner"); }
+            if (grp.CreatedUserId != user.Id) { return Forbid("Action only allowed by Owner"); }
 
             try
             {
@@ -222,11 +202,10 @@ namespace ScavengerHunt.Controllers
         //GET /home/userlog
         [Authorize]
         [HttpGet("scores/{id}")]
-        public async Task<ActionResult> GetScoreLog(int id)
+        public async Task<ActionResult> GetScoreLog(Guid id)
         {
             User? user;
             Group? grp;
-            IEnumerable<ScoreLog> scoreLogList;
             List<ScoreLogDto> scoreloglist = new();
 
             user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
@@ -235,15 +214,12 @@ namespace ScavengerHunt.Controllers
             grp = await groupRepo.GetAsync(id);
             if (grp == null) { return NotFound("Group doesn't exist"); }
 
-            if (grp.CreatedUser != user.Email) { return Forbid("Action only allowed by Owner"); }
+            if (grp.CreatedUserId != user.Id) { return Forbid("Action only allowed by Owner"); }
 
-            scoreLogList = await scoreLogRepo.GetScoreLogsByGroup(grp);
-
-            foreach (var scorelog in scoreLogList)
+            foreach (var scorelog in grp.PastWinners)
             {
                 ScoreLogDto newdt = new()
                 {
-                    Id = scorelog.Id,
                     DatePlayed = scorelog.DatePlayed,
                     LocationName = scorelog.LocationName,
                     Score = scorelog.Score,
@@ -251,7 +227,7 @@ namespace ScavengerHunt.Controllers
                 scoreloglist.Add(newdt);
             }
 
-            return Content(JsonConvert.SerializeObject(scoreLogList, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
+            return Content(JsonConvert.SerializeObject(scoreloglist, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
         }
     }
 }

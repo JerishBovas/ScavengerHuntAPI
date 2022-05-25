@@ -4,7 +4,7 @@ namespace ScavengerHunt.Services
 {
     public interface ILocationRepository
     {
-        Task<Location?> GetAsync(int id);
+        Task<Location?> GetAsync(Guid id);
         Task<List<Location>> GetAllAsync();
         Task CreateAsync(Location entity);
         void UpdateAsync(Location entity);
