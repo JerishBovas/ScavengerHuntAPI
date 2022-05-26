@@ -28,7 +28,7 @@ namespace ScavengerHunt.Library
             };
 
             var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
-                configuration.GetSection("Jwt:Key").Value));
+                configuration["Jwt:Key"]));
 
             var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
