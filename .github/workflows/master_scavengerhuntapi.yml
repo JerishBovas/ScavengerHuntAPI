@@ -54,4 +54,4 @@ jobs:
           app-name: 'ScavengerHuntAPI'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_E39471224D994DA4A898F5DB75B01B09 }}
-          package: ./ScavengerHunt
+          package: .
