@@ -8,40 +8,28 @@ namespace ScavengerHunt.Library
 {
     public static class ExtMethods
     {
-        public async static Task<User?> GetCurrentUser(HttpContext context, IUserRepository userRepository)
+        public async static Task<User?> GetCurrentUser(HttpContext context, IRepositoryService<User> userRepository)
         {
             if (context.User.Identity is ClaimsIdentity identity)
             {
-                if (identity.Claims.SingleOrDefault(u => u.Type == ClaimTypes.Email)?.Value is string email)
+                if (identity.Claims.SingleOrDefault(u => u.Type == ClaimTypes.NameIdentifier)?.Value is string id)
                 {
-                    return await userRepository.GetAsync(email);
+                    bool didParse = Guid.TryParse(id, out Guid result);
+                    if(!didParse){ return null;}
+
+                    User? user = await userRepository.GetAsync(result);
+                    if(user != null && user.Email == identity.Claims.SingleOrDefault(u => u.Type == ClaimTypes.Email)?.Value) return user;
+
+                    return null;
                 }
             }
             return null;
         }
-        public static string GenerateToken(User user, IConfiguration configuration)
+        public async static Task<User?> GetUserFromEmail(string email, IRepositoryService<User> userRepo)
         {
-            List<Claim> claims = new()
-            {
-                new Claim(ClaimTypes.Name, user.Name),
-                new Claim(ClaimTypes.Email, user.Email),
-            };
-
-            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
-                configuration["Jwt:Key"]));
-
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                configuration["Jwt:Issuer"],
-                configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: cred);
-
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
-            return jwt;
+            List<User> users = await userRepo.GetAllAsync();
+            
+            return users.Where(u => u.Email == email).FirstOrDefault();
         }
     }
 }

@@ -15,9 +15,8 @@ builder.Services.AddDbContext<ScavengerHuntContext>(options =>
     )
 );
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<ILocationRepository, LocationRepository>();
-builder.Services.AddScoped<IGroupRepository, GroupRepository>();
+builder.Services.AddScoped(typeof(IRepositoryService<>), typeof(RepositoryService<>));
+builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

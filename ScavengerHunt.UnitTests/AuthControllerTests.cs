@@ -1,13 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using Moq;
 using ScavengerHunt.Controllers;
+using ScavengerHunt.Models;
 using ScavengerHunt.Services;
 
-namespace ScavengerHunt_API.Tests
+namespace ScavengerHunt.UnitTests
 {
     public class AuthControllerTests
     {
-        public readonly Mock<IUserRepository> repositoryStub = new();
+        public readonly Mock<IRepositoryService<User>> repositoryStub = new();
         public readonly Mock<ILogger<AuthController>> loggerStub = new();
 
         [Fact]

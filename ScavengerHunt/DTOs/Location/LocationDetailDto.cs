@@ -8,6 +8,7 @@ namespace ScavengerHunt.DTOs
         public string Name { get; set; }
         public string Description { get; set; }
         public string Address { get; set; }
+        public string Country { get; set; }
         public CoordinateDto Coordinate { get; set; }
         public ICollection<RoomDto> Rooms { get; set; }
         public string ImageName { get; set; }

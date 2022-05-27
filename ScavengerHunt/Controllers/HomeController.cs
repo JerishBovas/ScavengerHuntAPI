@@ -1,13 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
-using ScavengerHunt.Library;
+using static ScavengerHunt.Library.ExtMethods;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
-using System.Collections.Generic;
-using System.Security.Claims;
 
 namespace ScavengerHunt.Controllers
 {
@@ -15,10 +12,10 @@ namespace ScavengerHunt.Controllers
     [ApiController]
     public class HomeController : ControllerBase
     {
-        private readonly IUserRepository userRepo;
+        private readonly IRepositoryService<User> userRepo;
         private readonly ILogger<HomeController> logger;
 
-        public HomeController(IUserRepository user, ILogger<HomeController> logger)
+        public HomeController(IRepositoryService<User> user, ILogger<HomeController> logger)
         {
             userRepo = user;
             this.logger = logger;
@@ -32,7 +29,7 @@ namespace ScavengerHunt.Controllers
             User? user;
             UserDto userdt;
 
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user is null){return NotFound("User does not exist");}
 
             userdt = new()
@@ -58,7 +55,7 @@ namespace ScavengerHunt.Controllers
             User? user;
             List<ScoreLogDto> scoreloglist = new();
 
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user is null){return NotFound("User does not exist");}
 
             foreach(var scorelog in user.UserLog.ScoreLog)

@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
-using ScavengerHunt.Library;
+using static ScavengerHunt.Library.ExtMethods;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
 
@@ -12,11 +12,11 @@ namespace ScavengerHunt.Controllers
     [ApiController]
     public class GroupController : ControllerBase
     {
-        private readonly IGroupRepository groupRepo;
-        private readonly IUserRepository userRepo;
+        private readonly IRepositoryService<Group> groupRepo;
+        private readonly IRepositoryService<User> userRepo;
         private readonly ILogger<GroupController> logger;
 
-        public GroupController(IGroupRepository groupRepo, IUserRepository userRepo, ILogger<GroupController> logger)
+        public GroupController(IRepositoryService<Group> groupRepo, IRepositoryService<User> userRepo, ILogger<GroupController> logger)
         {
             this.groupRepo = groupRepo;
             this.userRepo = userRepo;
@@ -106,7 +106,7 @@ namespace ScavengerHunt.Controllers
             Group newgrp;
 
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user == null) { return NotFound("User not found"); }
 
             newgrp = new()
@@ -142,7 +142,7 @@ namespace ScavengerHunt.Controllers
             Group newgrp;
 
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user == null) { return Unauthorized("User not found"); }
 
             grp = await groupRepo.GetAsync(id);
@@ -178,7 +178,7 @@ namespace ScavengerHunt.Controllers
             User? user;
             Group? grp;
 
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user is null) { return NotFound("User not found"); }
 
             grp = await groupRepo.GetAsync(id);
@@ -188,7 +188,7 @@ namespace ScavengerHunt.Controllers
 
             try
             {
-                groupRepo.DeleteAsync(grp);
+                groupRepo.DeleteAsync(grp.Id);
                 await groupRepo.SaveChangesAsync();
             }
             catch (Exception e)
@@ -208,7 +208,7 @@ namespace ScavengerHunt.Controllers
             Group? grp;
             List<ScoreLogDto> scoreloglist = new();
 
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user is null) { return NotFound("User doesn't exist"); }
 
             grp = await groupRepo.GetAsync(id);

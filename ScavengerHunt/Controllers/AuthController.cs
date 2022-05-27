@@ -1,24 +1,25 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ScavengerHunt.DTOs;
-using ScavengerHunt.Library;
+using static ScavengerHunt.Library.ExtMethods;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
 using System.Security.Cryptography;
+using System.Security.Claims;
 
 namespace ScavengerHunt.Controllers
 {
-    [Route("api/security")]
+    [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IUserRepository userRepo;
-        private readonly IConfiguration configuration;
+        private readonly IRepositoryService<User> userRepo;
+        private readonly ITokenService tokenService;
         private readonly ILogger<AuthController> logger;
 
-        public AuthController(IConfiguration configuration, IUserRepository user, ILogger<AuthController> logger)
+        public AuthController(ITokenService tokenService, IRepositoryService<User> user, ILogger<AuthController> logger)
         {
-            this.configuration = configuration;
+            this.tokenService = tokenService;
             userRepo = user;
             this.logger = logger;
         }
@@ -31,17 +32,11 @@ namespace ScavengerHunt.Controllers
             User user;
 
             if (!ModelState.IsValid){ return BadRequest(ModelState);}
-            if (await userRepo.GetAsync(request.Email) is not null){ return BadRequest("Email already Exist");}
+            if (await GetUserFromEmail(request.Email, userRepo) is not null){ return BadRequest("Email already Exist");}
 
-            CreatePassword(request.Password, out byte[] passwordHash, out byte[] salt);
+            CreatePassword(request.Password, out string passwordHash, out string salt);
 
-            user = new()
-            {
-                Name = request.Name,
-                Email = request.Email.ToLower(),
-                PasswordHash = passwordHash,
-                PasswordSalt = salt,
-            };
+            user = new User(request.Name, request.Email.ToLower(), passwordHash, salt);
 
             try
             {
@@ -59,20 +54,36 @@ namespace ScavengerHunt.Controllers
         //POST: /security/login
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<string>> Login(LoginDto request)
+        public async Task<ActionResult<string>> Login([FromBody] LoginDto request)
         {
-            User? user = await userRepo.GetAsync(request.Email);
+            User? user = await GetUserFromEmail(request.Email, userRepo);
 
-            if (user == null){ return NotFound("Email not found");}
+            if (user == null){ return NotFound("User not found");}
 
             if(!VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
             {
                 return NotFound("Password is incorrect");
             }
 
-            string token = ExtMethods.GenerateToken(user, configuration);
+            List<Claim> claims = new()
+            {
+                new Claim(ClaimTypes.Name, user.Name),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+            };
 
-            return Ok(token);
+            var accessToken = tokenService.GenerateAccessToken(claims);
+            var refreshToken = tokenService.GenerateRefreshToken();
+
+            user.RefToken = refreshToken;
+            user.RefTokenExpiry = DateTime.Now.AddDays(7);
+            await userRepo.SaveChangesAsync();
+
+            return Ok(new AuthResponseDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            });
         }
 
         //PUT: /security/resetpassword
@@ -84,13 +95,13 @@ namespace ScavengerHunt.Controllers
 
             if (!ModelState.IsValid){ return BadRequest(ModelState); }
 
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user is null)
             {
                 return NotFound("User not found");
             }
 
-            CreatePassword(res.Password, out byte[] passwordHash, out byte[] salt);
+            CreatePassword(res.Password, out string passwordHash, out string salt);
 
             user.PasswordHash = passwordHash;
             user.PasswordSalt = salt;
@@ -102,7 +113,13 @@ namespace ScavengerHunt.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                string Error = "Internal Error Occured.  Please Contact the Developer";
+                string Help = "Visit https://sh.jerishbovas.com/help for help";
+                var result = new {
+                    Error, Help
+                };
+                logger.LogInformation("Possible Database Error", e);
+                return NotFound(result);
             }
 
             return Ok();
@@ -120,7 +137,7 @@ namespace ScavengerHunt.Controllers
                 return BadRequest(ModelState);
             }
 
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user == null)
             {
                 return NotFound("User not found");
@@ -138,21 +155,27 @@ namespace ScavengerHunt.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return NotFound(e.Message);
             }
 
             return Ok();
         }
 
-        private static void CreatePassword(string password, out byte[] passwordHash, out byte[] passwordSalt)
+        private static void CreatePassword(string password, out string passwordHash, out string passwordSalt)
         {
             using var hmac = new HMACSHA512();
-            passwordSalt = hmac.Key;
-            passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+            byte[] salt = hmac.Key;
+            byte[] hash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+
+            passwordHash = Convert.ToBase64String(hash);
+            passwordSalt = Convert.ToBase64String(salt);
         }
 
-        private static bool VerifyPassword(string password, byte[] passwordHash, byte[] passwordSalt)
+        private static bool VerifyPassword(string password, string hash, string salt)
         {
+            byte[] passwordHash = Convert.FromBase64String(hash);
+            byte[] passwordSalt = Convert.FromBase64String(salt);
+
             using var hmac = new HMACSHA512(passwordSalt);
             var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
             return computedHash.SequenceEqual(passwordHash);

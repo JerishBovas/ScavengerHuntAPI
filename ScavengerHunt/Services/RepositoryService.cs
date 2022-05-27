@@ -1,47 +1,43 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ScavengerHunt.Data;
-using ScavengerHunt.Models;
 
 namespace ScavengerHunt.Services
 {
-    public class UserRepository : IUserRepository
+    public class RepositoryService<T> : IRepositoryService<T> where T : class
     {
         private readonly ScavengerHuntContext context;
-        private readonly DbSet<User> dbSet;
+        private readonly DbSet<T> dbSet;
 
-        public UserRepository(ScavengerHuntContext context)
+        public RepositoryService(ScavengerHuntContext context)
         {
             this.context = context;
             this.context.Database.EnsureCreatedAsync();
-            dbSet = this.context.Set<User>();
+            dbSet = this.context.Set<T>();
         }
 
-        public async Task<List<User>> GetAllAsync()
+        public async Task<List<T>> GetAllAsync()
         {
             return await dbSet.ToListAsync();
         }
 
-        public async Task<User?> GetAsync(string email)
+        public async Task<T?> GetAsync(Guid id)
         {
-            return await dbSet
-                .Where(s => s.Email == email)
-                .Include(u => u.UserLog)
-                .FirstOrDefaultAsync();
+            return await dbSet.FindAsync(id);
         }
 
-        public async Task CreateAsync(User entity)
+        public async Task CreateAsync(T entity)
         {
             await dbSet.AddAsync(entity);
         }
 
-        public void UpdateAsync(User entity)
+        public void UpdateAsync(T entity)
         {
             dbSet.Update(entity);
         }
 
-        public async void DeleteAsync(string email)
+        public async void DeleteAsync(Guid id)
         {
-            User? entity = await GetAsync(email);
+            T? entity = await GetAsync(id);
             if (entity != null)
             {
                 dbSet.Remove(entity);

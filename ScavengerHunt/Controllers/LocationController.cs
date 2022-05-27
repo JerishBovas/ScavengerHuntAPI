@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
-using ScavengerHunt.Library;
+using static ScavengerHunt.Library.ExtMethods;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
 
@@ -12,11 +12,11 @@ namespace ScavengerHunt.Controllers
     [ApiController]
     public class LocationController : ControllerBase
     {
-        private readonly ILocationRepository locRepo;
-        private readonly IUserRepository userRepo;
+        private readonly IRepositoryService<Location> locRepo;
+        private readonly IRepositoryService<User> userRepo;
         private readonly ILogger<LocationController> logger;
 
-        public LocationController(ILocationRepository locRepo, IUserRepository userRepo, ILogger<LocationController> logger)
+        public LocationController(IRepositoryService<Location> locRepo, IRepositoryService<User> userRepo, ILogger<LocationController> logger)
         {
             this.locRepo = locRepo;
             this.userRepo = userRepo;
@@ -51,6 +51,7 @@ namespace ScavengerHunt.Controllers
                     Name = loc.Name,
                     Description = loc.Description,
                     Address = loc.Address,
+                    Country = loc.Country,
                     Coordinate = new CoordinateDto()
                     {
                         Latitude = loc.Coordinate.Latitude,
@@ -99,6 +100,7 @@ namespace ScavengerHunt.Controllers
                 Name = loc.Name,
                 Description = loc.Description,
                 Address = loc.Address,
+                Country = loc.Country,
                 Coordinate = new()
                 {
                     Latitude = loc.Coordinate.Latitude,
@@ -123,29 +125,16 @@ namespace ScavengerHunt.Controllers
             Location newloc;
 
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user == null){return NotFound("User does not exist");}
 
-            newloc = new()
+            Coordinate coordinate = new Coordinate()
             {
-                IsPrivate = res.IsPrivate,
-                Name = res.Name,
-                Description = res.Description,
-                Address = res.Address,
-                UserId = user.Id,
-                Coordinate = new Coordinate()
-                {
-                    Latitude = res.Coordinate.Latitude,
-                    Longitude = res.Coordinate.Longitude,
-                },
-                Rooms = new List<Room>(),
-                ImageName = res.ImageName,
-                Difficulty = res.Difficulty,
-                Ratings = new List<int>(),
-                Tags = res.Tags,
-                CreatedDate = DateTimeOffset.UtcNow,
-                LastUpdated = DateTimeOffset.UtcNow,
+                Latitude = res.Coordinate.Latitude,
+                Longitude = res.Coordinate.Longitude,
             };
+
+            newloc = new(res.IsPrivate, res.Name, res.Description, res.Address, res.Country, user.Id, coordinate, res.ImageName, res.Difficulty, res.Tags);
 
             try
             {
@@ -169,7 +158,7 @@ namespace ScavengerHunt.Controllers
             Location newloc;
 
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user == null) { return NotFound("User does not exist"); }
 
             loc = await locRepo.GetAsync(id);
@@ -183,6 +172,7 @@ namespace ScavengerHunt.Controllers
                 Name = res.Name,
                 Description = res.Description,
                 Address = res.Address,
+                Country = res.Country,
                 Coordinate = new()
                 {
                     Latitude = res.Coordinate.Latitude,
@@ -215,7 +205,7 @@ namespace ScavengerHunt.Controllers
             User? user;
             Location? newloc;
 
-            user = await ExtMethods.GetCurrentUser(HttpContext, userRepo);
+            user = await GetCurrentUser(HttpContext, userRepo);
             if (user == null) { return NotFound("User does not exist"); }
 
             newloc = await locRepo.GetAsync(id);
@@ -225,7 +215,7 @@ namespace ScavengerHunt.Controllers
 
             try
             {
-                locRepo.DeleteAsync(newloc);
+                locRepo.DeleteAsync(newloc.Id);
                 await locRepo.SaveChangesAsync();
             }
             catch (Exception e)
