@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
-using static ScavengerHunt.Library.ExtMethods;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
 
@@ -15,12 +14,14 @@ namespace ScavengerHunt.Controllers
         private readonly IRepositoryService<Location> locRepo;
         private readonly IRepositoryService<User> userRepo;
         private readonly ILogger<LocationController> logger;
+        private readonly IHelperService helpMethod;
 
-        public LocationController(IRepositoryService<Location> locRepo, IRepositoryService<User> userRepo, ILogger<LocationController> logger)
+        public LocationController(IRepositoryService<Location> locRepo, IRepositoryService<User> userRepo, ILogger<LocationController> logger, IHelperService help)
         {
             this.locRepo = locRepo;
             this.userRepo = userRepo;
             this.logger = logger;
+            helpMethod = help;
         }
 
         // GET: api/Location
@@ -125,7 +126,7 @@ namespace ScavengerHunt.Controllers
             Location newloc;
 
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            user = await GetCurrentUser(HttpContext, userRepo);
+            user = await helpMethod.GetCurrentUser(HttpContext);
             if (user == null){return NotFound("User does not exist");}
 
             Coordinate coordinate = new Coordinate()
@@ -158,7 +159,7 @@ namespace ScavengerHunt.Controllers
             Location newloc;
 
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            user = await GetCurrentUser(HttpContext, userRepo);
+            user = await helpMethod.GetCurrentUser(HttpContext);
             if (user == null) { return NotFound("User does not exist"); }
 
             loc = await locRepo.GetAsync(id);
@@ -205,7 +206,7 @@ namespace ScavengerHunt.Controllers
             User? user;
             Location? newloc;
 
-            user = await GetCurrentUser(HttpContext, userRepo);
+            user = await helpMethod.GetCurrentUser(HttpContext);
             if (user == null) { return NotFound("User does not exist"); }
 
             newloc = await locRepo.GetAsync(id);

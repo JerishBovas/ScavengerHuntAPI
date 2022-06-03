@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ScavengerHunt.Data;
+using ScavengerHunt.DTOs;
 using ScavengerHunt.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +19,7 @@ builder.Services.AddDbContext<ScavengerHuntContext>(options =>
 builder.Services.AddHttpClient();
 builder.Services.AddScoped(typeof(IRepositoryService<>), typeof(RepositoryService<>));
 builder.Services.AddTransient<ITokenService, TokenService>();
+builder.Services.AddScoped<IHelperService, HelperService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -32,7 +35,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
 
     });
-builder.Services.AddMvc();
+builder.Services.AddMvc()
+        .ConfigureApiBehaviorOptions(options =>
+        {
+            options.InvalidModelStateResponseFactory = context =>
+            {
+                var problems = new CustomError(context)
+                {
+                    Title = "Invalid model sent to API",
+                    Status = 400
+                };
+                return new BadRequestObjectResult(problems);
+            };
+        });
 builder.Services.AddControllers();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

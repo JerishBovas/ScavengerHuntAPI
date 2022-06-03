@@ -15,6 +15,22 @@
         public ICollection<Guid> Groups { get; set; }
         public DateTimeOffset CreatedDate { get; set; }
 
+        public User()
+        {
+            Id = Guid.NewGuid();
+            Name = "";
+            Email = "";
+            Role = "";
+            PasswordHash = "";
+            PasswordSalt = "";
+            RefToken = null;
+            RefTokenExpiry = null;
+            UserLog = new();
+            Locations = new HashSet<Guid>();
+            Groups = new HashSet<Guid>();
+            CreatedDate = DateTimeOffset.UtcNow;
+        }
+
         public User(string name, string email, string passwordHash, string passwordSalt)
         {
             Id = Guid.NewGuid();

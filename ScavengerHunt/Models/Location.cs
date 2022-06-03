@@ -18,6 +18,22 @@
         public DateTimeOffset CreatedDate { get; set; }
         public DateTimeOffset LastUpdated { get; set; }
 
+        public Location()
+        {
+            Id = Guid.NewGuid();
+            Name = "";
+            Description = "";
+            Address = "";
+            Country = "";
+            Coordinate = new Coordinate();
+            Rooms = new List<Room>();
+            ImageName = "";
+            Difficulty = 0;
+            Ratings = new List<int>();
+            Tags = new List<string>();
+            CreatedDate = DateTimeOffset.UtcNow;
+            LastUpdated = DateTimeOffset.UtcNow;
+        }
         
         public Location(bool isPrivate, string name, string description, string address, string country, Guid userId, Coordinate coordinate,  string imageName, int difficulty, List<string> tags)
         {
@@ -34,23 +50,6 @@
             Difficulty = difficulty;
             Ratings = new List<int>();
             Tags = tags;
-            CreatedDate = DateTimeOffset.UtcNow;
-            LastUpdated = DateTimeOffset.UtcNow;
-        }
-
-        public Location()
-        {
-            Id = Guid.NewGuid();
-            Name = "";
-            Description = "";
-            Address = "";
-            Country = "";
-            Coordinate = new Coordinate();
-            Rooms = new List<Room>();
-            ImageName = "";
-            Difficulty = 0;
-            Ratings = new List<int>();
-            Tags = new List<string>();
             CreatedDate = DateTimeOffset.UtcNow;
             LastUpdated = DateTimeOffset.UtcNow;
         }

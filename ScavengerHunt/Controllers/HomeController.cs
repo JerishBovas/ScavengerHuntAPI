@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
-using static ScavengerHunt.Library.ExtMethods;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
 
@@ -14,22 +13,24 @@ namespace ScavengerHunt.Controllers
     {
         private readonly IRepositoryService<User> userRepo;
         private readonly ILogger<HomeController> logger;
+        private readonly IHelperService helpMethod;
 
-        public HomeController(IRepositoryService<User> user, ILogger<HomeController> logger)
+        public HomeController(IRepositoryService<User> user, ILogger<HomeController> logger, IHelperService help)
         {
             userRepo = user;
             this.logger = logger;
+            helpMethod = help;
         }
 
         //GET /home
         [Authorize]
         [HttpGet("")]
-        public async Task<ActionResult> GetInfo()
+        public async Task<ActionResult<UserDto>> GetInfo()
         {
             User? user;
             UserDto userdt;
 
-            user = await GetCurrentUser(HttpContext, userRepo);
+            user = await helpMethod.GetCurrentUser(HttpContext);
             if (user is null){return NotFound("User does not exist");}
 
             userdt = new()
@@ -44,18 +45,18 @@ namespace ScavengerHunt.Controllers
                 }
             };
 
-            return Content(JsonConvert.SerializeObject(userdt, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
+            return userdt;
         }
 
         //GET /home/userlog
         [Authorize]
         [HttpGet("scores")]
-        public async Task<ActionResult> GetScoreLog()
+        public async Task<ActionResult<List<ScoreLogDto>>> GetScoreLog()
         {
             User? user;
             List<ScoreLogDto> scoreloglist = new();
 
-            user = await GetCurrentUser(HttpContext, userRepo);
+            user = await helpMethod.GetCurrentUser(HttpContext);
             if (user is null){return NotFound("User does not exist");}
 
             foreach(var scorelog in user.UserLog.ScoreLog)
@@ -69,7 +70,7 @@ namespace ScavengerHunt.Controllers
                 scoreloglist.Add(newdt);
             }
 
-            return Content(JsonConvert.SerializeObject(scoreloglist, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
+            return scoreloglist;
         }
     }
 }
