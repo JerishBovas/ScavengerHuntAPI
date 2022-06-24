@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System.Security.Cryptography;
+using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -37,7 +38,7 @@ namespace ScavengerHunt.UnitTests
         }
 
         [Fact]
-        public void Register_WithValidModel_ReturnsBadRequest()
+        public void Register_WithValidModel_ReturnsRegisteredUser()
         {
             //Arrange
             RegisterDto creatItem = new(){
@@ -91,7 +92,7 @@ namespace ScavengerHunt.UnitTests
             var result = ac.Login(loginItem);
 
             //Assert
-            result.Result.Should().BeOfType<BadRequestObjectResult>();
+            result.Result.Result.Should().BeOfType<BadRequestObjectResult>();
         }
 
         [Fact]
@@ -100,17 +101,54 @@ namespace ScavengerHunt.UnitTests
             //Arrange
             LoginDto loginItem = new()
             {
-                Email = "jerishbradlyb@gmail.com",
+                Email = Guid.NewGuid().ToString(),
                 Password = Guid.NewGuid().ToString()
             };
-            helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(new User());
+            CreatePassword(loginItem.Password, out string hash, out string salt);
+            User user = new()
+            {
+                Id = Guid.NewGuid(),
+                Name = Guid.NewGuid().ToString(),
+                Email = loginItem.Email,
+                Role = "user",
+                PasswordHash = hash,
+                PasswordSalt = salt,
+                RefToken = null,
+                RefTokenExpiry = null,
+                UserLog = new(),
+                Locations = new HashSet<Guid>(),
+                Groups = new HashSet<Guid>(),
+                CreatedDate = DateTimeOffset.UtcNow
+            };
+            helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(user);
+            userRepo.Setup(X => X.SaveChangesAsync()).ThrowsAsync(new SystemException());
             AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object);
 
             //Act
-            var result = ac.Login(loginItem);
+            var result = ac.Login(loginItem).Result;
 
             //Assert
-            result.Result.Should().BeOfType<BadRequestObjectResult>();
+            result.Result.Should().BeOfType<ObjectResult>();
+        }
+
+        private static void CreatePassword(string password, out string passwordHash, out string passwordSalt)
+        {
+            using var hmac = new HMACSHA512();
+            byte[] salt = hmac.Key;
+            byte[] hash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+
+            passwordHash = Convert.ToBase64String(hash);
+            passwordSalt = Convert.ToBase64String(salt);
+        }
+
+        private static bool VerifyPassword(string password, string hash, string salt)
+        {
+            byte[] passwordHash = Convert.FromBase64String(hash);
+            byte[] passwordSalt = Convert.FromBase64String(salt);
+
+            using var hmac = new HMACSHA512(passwordSalt);
+            var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+            return computedHash.SequenceEqual(passwordHash);
         }
     }
 }

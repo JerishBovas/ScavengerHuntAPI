@@ -27,7 +27,7 @@ namespace ScavengerHunt.Controllers
         // GET: api/Location
         [Authorize]
         [HttpGet]
-        public async Task<ActionResult> Get()
+        public async Task<ActionResult<List<LocationDto>>> Get()
         {
             List<Location> locations;
             List<LocationDto> locdto = new();
@@ -66,13 +66,13 @@ namespace ScavengerHunt.Controllers
                 locdto.Add(locationDto);
             }
 
-            return Content(JsonConvert.SerializeObject(locdto, Formatting.Indented));
+            return locdto;
         }
 
         // GET api/Location/5
         [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult> Get(Guid id)
+        public async Task<ActionResult<LocationDetailDto>> Get(Guid id)
         {
             Location? loc;
             LocationDetailDto locdto;
@@ -114,7 +114,7 @@ namespace ScavengerHunt.Controllers
                 Tags = loc.Tags
             };
 
-            return Content(JsonConvert.SerializeObject(locdto, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
+            return locdto;
         }
 
         // POST api/Location

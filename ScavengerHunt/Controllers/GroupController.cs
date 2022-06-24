@@ -27,7 +27,7 @@ namespace ScavengerHunt.Controllers
         // GET: api/group
         [Authorize]
         [HttpGet]
-        public async Task<ActionResult> Get()
+        public async Task<ActionResult<List<GroupDto>>> Get()
         {
             List<Group> Groups;
             List<GroupDto> GroupsDto = new();
@@ -54,13 +54,13 @@ namespace ScavengerHunt.Controllers
                 };
                 GroupsDto.Add(grpDto);
             }
-            return Content(JsonConvert.SerializeObject(GroupsDto, Formatting.Indented));
+            return GroupsDto;
         }
 
         // GET api/group/5
         [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult> Get(Guid id)
+        public async Task<ActionResult<GroupDetailDto>> Get(Guid id)
         {
             GroupDetailDto dto;
             Group? group;
@@ -95,7 +95,7 @@ namespace ScavengerHunt.Controllers
                 PastWinners = scoreLog,
             };
 
-            return Content(JsonConvert.SerializeObject(dto, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
+            return dto;
         }
 
         // POST api/group
@@ -198,37 +198,6 @@ namespace ScavengerHunt.Controllers
             }
 
             return Ok();
-        }
-
-        //GET /home/userlog
-        [Authorize]
-        [HttpGet("scores/{id}")]
-        public async Task<ActionResult> GetScoreLog(Guid id)
-        {
-            User? user;
-            Group? grp;
-            List<ScoreLogDto> scoreloglist = new();
-
-            user = await helpMethod.GetCurrentUser(HttpContext);
-            if (user is null) { return NotFound("User doesn't exist"); }
-
-            grp = await groupRepo.GetAsync(id);
-            if (grp == null) { return NotFound("Group doesn't exist"); }
-
-            if (grp.CreatedUserId != user.Id) { return Forbid("Action only allowed by Owner"); }
-
-            foreach (var scorelog in grp.PastWinners)
-            {
-                ScoreLogDto newdt = new()
-                {
-                    DatePlayed = scorelog.DatePlayed,
-                    LocationName = scorelog.LocationName,
-                    Score = scorelog.Score,
-                };
-                scoreloglist.Add(newdt);
-            }
-
-            return Content(JsonConvert.SerializeObject(scoreloglist, Formatting.Indented, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
         }
     }
 }
