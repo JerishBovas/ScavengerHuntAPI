@@ -15,7 +15,9 @@ public class BlobService : IBlobService
         var blobContainer = blobServiceClient.GetBlobContainerClient(container);
         await blobContainer.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
 
-        var blobClient = blobContainer.GetBlobClient($"{id}");
+        string ext = file.FileName.Split(".").LastOrDefault() ?? "jpeg";
+
+        var blobClient = blobContainer.GetBlobClient($"{id}.{ext}");
 
         await blobClient.UploadAsync(file.OpenReadStream(), true);
 
