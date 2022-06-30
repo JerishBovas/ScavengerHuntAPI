@@ -16,6 +16,7 @@ namespace ScavengerHunt.UnitTests
         private readonly Mock<ILogger<AuthController>> logger = new();
         private readonly Mock<ITokenService> tokenService = new();
         private readonly Mock<IHelperService> helpMethod = new();
+        private readonly Mock<IBlobService> blobService = new();
         private readonly Random rand = new();
 
         [Fact]
@@ -29,7 +30,7 @@ namespace ScavengerHunt.UnitTests
                 Password = Guid.NewGuid().ToString()   
             };
             helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(new User());
-            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object);
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
             
             //Act
             var result = ac.Register(createdItem);
@@ -46,7 +47,7 @@ namespace ScavengerHunt.UnitTests
                 Email = Guid.NewGuid().ToString(),
                 Password = Guid.NewGuid().ToString()
             };
-            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object);
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
             //Act
             var result = ac.Register(creatItem);
             //Assert
@@ -68,7 +69,7 @@ namespace ScavengerHunt.UnitTests
                 Password = Guid.NewGuid().ToString()
             };
             helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync((User?)null);
-            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object);
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
             
             //Act
             var result = ac.Login(loginItem);
@@ -86,7 +87,7 @@ namespace ScavengerHunt.UnitTests
                 Password = Guid.NewGuid().ToString()
             };
             helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(new User());
-            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object);
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
 
             //Act
             var result = ac.Login(loginItem);
@@ -122,7 +123,7 @@ namespace ScavengerHunt.UnitTests
             };
             helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(user);
             userRepo.Setup(X => X.SaveChangesAsync()).ThrowsAsync(new SystemException());
-            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object);
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
 
             //Act
             var result = ac.Login(loginItem).Result;
