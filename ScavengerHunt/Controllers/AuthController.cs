@@ -188,7 +188,7 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPut("AddImage")]
-    public async Task<ActionResult> AddImage(FileModel file)
+    public async Task<ActionResult> AddImage([FromForm] FileModel file)
     {
         if(file.ImageFile == null) return BadRequest();
 
