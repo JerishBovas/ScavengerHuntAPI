@@ -21,7 +21,7 @@ namespace ScavengerHunt.Data
                 .OwnsOne(u => u.UserLog)
                 .OwnsMany(u => u.ScoreLog);
 
-            userModel.Property(u => u.Locations)
+            userModel.Property(u => u.Games)
                 .HasConversion(new ValueConverter<ICollection<Guid>, string>(
                     v => JsonConvert.SerializeObject(v),
                     v => JsonConvert.DeserializeObject<ICollection<Guid>>(v) ?? new List<Guid>(){Guid.Empty}));
@@ -31,9 +31,9 @@ namespace ScavengerHunt.Data
                     v => JsonConvert.SerializeObject(v),
                     v => JsonConvert.DeserializeObject<ICollection<Guid>>(v) ?? new List<Guid>(){Guid.Empty}));
 
-            builder.Entity<Location>()
-                .ToContainer(nameof(Locations))
-                .HasPartitionKey(nameof(Location.UserId))
+            builder.Entity<Game>()
+                .ToContainer(nameof(Games))
+                .HasPartitionKey(nameof(Game.UserId))
                 .OwnsMany(l => l.Rooms)
                 .OwnsMany(r => r.Items);
 
@@ -48,7 +48,7 @@ namespace ScavengerHunt.Data
                     v => JsonConvert.DeserializeObject<ICollection<Guid>>(v) ?? new List<Guid>(){Guid.Empty}));
         }
 
-        public DbSet<Location>? Locations { get; set; }
+        public DbSet<Game>? Games { get; set; }
         public DbSet<Group>? Groups { get; set; }
         public DbSet<User>? Users { get; set; }
     }

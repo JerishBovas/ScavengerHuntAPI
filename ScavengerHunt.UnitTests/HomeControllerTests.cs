@@ -14,7 +14,7 @@ namespace ScavengerHunt.UnitTests;
 
 public class HomeControllerTests
 {
-	private readonly Mock<IRepositoryService<User>> userRepo = new();
+	private readonly Mock<IUserService> userRepo = new();
     private readonly Mock<ILogger<HomeController>> logger = new();
 	private readonly Mock<IHelperService> helpMethod = new();
 	private readonly Random rand = new();
@@ -103,7 +103,7 @@ public class HomeControllerTests
 				LastUpdated = DateTimeOffset.UtcNow,
 				ScoreLog = new List<ScoreLog>()
 			},
-            Locations = new HashSet<Guid>(),
+            Games = new HashSet<Guid>(),
             Groups = new HashSet<Guid>(),
             CreatedDate = DateTimeOffset.UtcNow
 		};

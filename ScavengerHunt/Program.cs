@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Azure;
 using Microsoft.IdentityModel.Tokens;
 using ScavengerHunt.Data;
 using ScavengerHunt.DTOs;
@@ -11,13 +12,19 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddDbContext<ScavengerHuntContext>(options =>
     options.UseCosmos(
-        builder.Configuration["ScavengerHunt_ENDPOINT"],
-        builder.Configuration["ScavengerHunt_MASTER_KEY"],
+        builder.Configuration.GetConnectionString("ScavengerHunt_Database"),
         databaseName: builder.Configuration["ScavengerHunt_DATABASE_ID"]
     )
 );
+builder.Services.AddAzureClients(options =>
+{
+    options.AddBlobServiceClient(builder.Configuration.GetConnectionString("ScavengerHunt_Storage"));
+});
 builder.Services.AddHttpClient();
-builder.Services.AddScoped(typeof(IRepositoryService<>), typeof(RepositoryService<>));
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IBlobService, BlobService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddScoped<IHelperService, HelperService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

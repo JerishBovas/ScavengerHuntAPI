@@ -11,12 +11,12 @@ namespace ScavengerHunt.Controllers
     [ApiController]
     public class GroupController : ControllerBase
     {
-        private readonly IRepositoryService<Group> groupRepo;
-        private readonly IRepositoryService<User> userRepo;
+        private readonly IGroupService groupRepo;
+        private readonly IUserService userRepo;
         private readonly ILogger<GroupController> logger;
         private readonly IHelperService helpMethod;
 
-        public GroupController(IRepositoryService<Group> groupRepo, IRepositoryService<User> userRepo, ILogger<GroupController> logger, IHelperService help)
+        public GroupController(IGroupService groupRepo, IUserService userRepo, ILogger<GroupController> logger, IHelperService help)
         {
             this.groupRepo = groupRepo;
             this.userRepo = userRepo;
@@ -76,7 +76,7 @@ namespace ScavengerHunt.Controllers
                 {
                     ScoreLogDto scoreLogDto = new()
                     {
-                        LocationName = item.LocationName,
+                        GameName = item.GameName,
                         DatePlayed = item.DatePlayed,
                         Score = item.Score
 

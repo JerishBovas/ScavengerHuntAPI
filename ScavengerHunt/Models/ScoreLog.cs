@@ -3,20 +3,20 @@
     public record ScoreLog
     {
         public DateTimeOffset DatePlayed { get; set; }
-        public string LocationName { get; set; }
+        public string GameName { get; set; }
         public int Score { get; set; }
 
-        public ScoreLog(string locationName, int score)
+        public ScoreLog(string gameName, int score)
         {
             DatePlayed = DateTimeOffset.UtcNow;
-            LocationName = locationName;
+            GameName = gameName;
             Score = score;
         }
 
-        public ScoreLog(DateTimeOffset datePlayed, string locationName, int score)
+        public ScoreLog(DateTimeOffset datePlayed, string gameName, int score)
         {
             DatePlayed = datePlayed;
-            LocationName = locationName;
+            GameName = gameName;
             Score = score;
         }
     }

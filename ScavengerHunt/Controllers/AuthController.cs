@@ -12,17 +12,19 @@ namespace ScavengerHunt.Controllers;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly IRepositoryService<User> userRepo;
+    private readonly IUserService userRepo;
     private readonly ITokenService tokenService;
     private readonly ILogger<AuthController> logger;
     private readonly IHelperService helpService;
+    private readonly IBlobService blobService;
 
-    public AuthController(ITokenService tokenService, IRepositoryService<User> user, ILogger<AuthController> logger, IHelperService help)
+    public AuthController(ITokenService tokenService, IUserService user, ILogger<AuthController> logger, IHelperService help, IBlobService blob)
     {
         this.tokenService = tokenService;
         userRepo = user;
         this.logger = logger;
         helpService = help;
+        blobService = blob;
     }
 
     //POST: /auth/register
@@ -182,6 +184,33 @@ public class AuthController : ControllerBase
         }
 
         return Ok();
+    }
+
+    [Authorize]
+    [HttpPut("AddImage")]
+    public async Task<ActionResult> AddImage([FromForm] FileModel file)
+    {
+        if(file.ImageFile == null) return BadRequest();
+
+        var user = await helpService.GetCurrentUser(HttpContext);
+        if (user == null)
+        {
+            return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
+        }
+
+        try
+        {
+            var url = await blobService.SaveImage("profile", file.ImageFile, user.Id);
+            user.ProfileImage = url;
+            userRepo.UpdateAsync(user);
+            await userRepo.SaveChangesAsync();
+            return Created(url, new {ImagePath = user.ProfileImage});
+        }
+        catch (Exception e)
+        {
+            logger.LogInformation("Possible Storage Error", e);
+            return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message, "Visit https://sh.jerishbovas.com/help"}));
+        }
     }
 
     //PUT: /auth/changename

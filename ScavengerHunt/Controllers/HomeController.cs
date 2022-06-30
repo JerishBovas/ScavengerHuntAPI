@@ -11,11 +11,11 @@ namespace ScavengerHunt.Controllers
     [ApiController]
     public class HomeController : ControllerBase
     {
-        private readonly IRepositoryService<User> userRepo;
+        private readonly IUserService userRepo;
         private readonly ILogger<HomeController> logger;
         private readonly IHelperService helpMethod;
 
-        public HomeController(IRepositoryService<User> user, ILogger<HomeController> logger, IHelperService help)
+        public HomeController(IUserService user, ILogger<HomeController> logger, IHelperService help)
         {
             userRepo = user;
             this.logger = logger;
@@ -64,7 +64,7 @@ namespace ScavengerHunt.Controllers
                 ScoreLogDto newdt = new()
                 {
                     DatePlayed = scorelog.DatePlayed,
-                    LocationName = scorelog.LocationName,
+                    GameName = scorelog.GameName,
                     Score = scorelog.Score,
                 };
                 scoreloglist.Add(newdt);

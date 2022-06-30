@@ -1,43 +1,44 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ScavengerHunt.Data;
+using ScavengerHunt.Models;
 
 namespace ScavengerHunt.Services
 {
-    public class RepositoryService<T> : IRepositoryService<T> where T : class
+    public class UserService : IUserService
     {
         private readonly ScavengerHuntContext context;
-        private readonly DbSet<T> dbSet;
+        private readonly DbSet<User> dbSet;
 
-        public RepositoryService(ScavengerHuntContext context)
+        public UserService(ScavengerHuntContext context)
         {
             this.context = context;
             this.context.Database.EnsureCreatedAsync();
-            dbSet = this.context.Set<T>();
+            dbSet = this.context.Set<User>();
         }
 
-        public async Task<List<T>> GetAllAsync()
+        public async Task<List<User>> GetAllAsync()
         {
             return await dbSet.ToListAsync();
         }
 
-        public async Task<T?> GetAsync(Guid id)
+        public async Task<User?> GetAsync(Guid id)
         {
             return await dbSet.FindAsync(id);
         }
 
-        public async Task CreateAsync(T entity)
+        public async Task CreateAsync(User entity)
         {
             await dbSet.AddAsync(entity);
         }
 
-        public void UpdateAsync(T entity)
+        public void UpdateAsync(User entity)
         {
             dbSet.Update(entity);
         }
 
         public async void DeleteAsync(Guid id)
         {
-            T? entity = await GetAsync(id);
+            User? entity = await GetAsync(id);
             if (entity != null)
             {
                 dbSet.Remove(entity);

@@ -1,6 +1,6 @@
 ﻿namespace ScavengerHunt.Models
 {
-    public record Location
+    public record Game
     {
         public Guid Id { get; set; }
         public bool IsPrivate { get; set; }
@@ -18,7 +18,7 @@
         public DateTimeOffset CreatedDate { get; set; }
         public DateTimeOffset LastUpdated { get; set; }
 
-        public Location()
+        public Game()
         {
             Id = Guid.NewGuid();
             Name = "";
@@ -35,7 +35,7 @@
             LastUpdated = DateTimeOffset.UtcNow;
         }
         
-        public Location(bool isPrivate, string name, string description, string address, string country, Guid userId, Coordinate coordinate,  string imageName, int difficulty, List<string> tags)
+        public Game(bool isPrivate, string name, string description, string address, string country, Guid userId, Coordinate coordinate,  string imageName, int difficulty, List<string> tags)
         {
             Id = Guid.NewGuid();
             IsPrivate = isPrivate;

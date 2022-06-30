@@ -1,7 +1,8 @@
 ﻿namespace ScavengerHunt.DTOs
 {
-	public record struct LocationCreateDto
-	{
+    public record struct GameDto
+    {
+        public Guid Id { get; set; }
         public bool IsPrivate { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
@@ -10,6 +11,9 @@
         public CoordinateDto Coordinate { get; set; }
         public string ImageName { get; set; }
         public int Difficulty { get; set; }
+        public List<int> Ratings { get; set; }
         public List<string> Tags { get; set; }
+        public DateTimeOffset CreatedDate { get; set; }
+        public DateTimeOffset LastUpdated { get; set; }
     }
 }

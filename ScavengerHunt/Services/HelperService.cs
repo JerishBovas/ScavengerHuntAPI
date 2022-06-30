@@ -5,9 +5,9 @@ namespace ScavengerHunt.Services;
 
 public class HelperService : IHelperService
 {
-    private readonly IRepositoryService<User> userRepo;
+    private readonly IUserService userRepo;
 
-    public HelperService(IRepositoryService<User> userRepo)
+    public HelperService(IUserService userRepo)
     {
         this.userRepo = userRepo;
     }
