@@ -1,4 +1,5 @@
 # Scavenger Hunt API
+![GitHubAction workflow](https://github.com/JerishBovas/ScavengerHuntAPI/actions/workflows/master_scavengerhuntapis.yml/badge.svg)
 
 The Scavenger Hunt API is a web application built using .NET Web API with built-in authentication and login capabilities, to be used with the Scavenger Hunt Game for iOS.
 
