@@ -25,8 +25,8 @@ namespace ScavengerHunt.Controllers
         }
 
         //GET /home
-        [Authorize, HttpGet("")]
-        public async Task<ActionResult<UserDto>> GetInfo()
+        [Authorize, HttpGet]
+        public async Task<ActionResult<UserDto>> GetUser()
         {
             User? user;
             UserDto userdt;
@@ -39,6 +39,7 @@ namespace ScavengerHunt.Controllers
                 Id = user.Id,
                 Name = user.Name,
                 Email = user.Email,
+                ProfileImage = user.ProfileImage,
                 UserLog = new UserLogDto()
                 {
                     UserScore = user.UserLog.UserScore,

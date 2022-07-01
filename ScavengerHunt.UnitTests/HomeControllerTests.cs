@@ -32,7 +32,7 @@ public class HomeControllerTests
 		//Arrange
 		helpMethod.Setup(method => method.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync((User?)null);
 		//Act
-		var result = await hc.GetInfo();
+		var result = await hc.GetUser();
 
 		//Assert
 		result.Result.Should().BeOfType<NotFoundObjectResult>();
@@ -46,7 +46,7 @@ public class HomeControllerTests
 		helpMethod.Setup(method => method.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync(expectedUser);
 
 		//Act
-		var result = await hc.GetInfo();
+		var result = await hc.GetUser();
 
 		//Assert
 		result.Value.Should().BeEquivalentTo(

@@ -20,7 +20,7 @@ public class BlobService : IBlobService
 
         var blobClient = blobContainer.GetBlobClient($"{name}{ext}");
 
-        await blobClient.UploadAsync(file.OpenReadStream(), true);
+        await blobClient.UploadAsync(file.OpenReadStream(), false);
 
         return blobClient.Uri.AbsoluteUri.ToString();
     }
