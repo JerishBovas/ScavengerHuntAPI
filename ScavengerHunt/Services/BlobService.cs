@@ -10,14 +10,15 @@ public class BlobService : IBlobService
     {
         this.blobServiceClient = blobServiceClient;
     }
-    public async Task<string> SaveImage(string container, IFormFile file, Guid id)
+    public async Task<string> SaveImage(string container, IFormFile file, string name)
     {
         var blobContainer = blobServiceClient.GetBlobContainerClient(container);
         await blobContainer.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
 
-        string ext = file.FileName.Split(".").LastOrDefault() ?? "jpeg";
+        string[] extList = file.FileName.Split(".");
+        string ext = extList.Length > 1 ? "."+ extList.Last() : "";
 
-        var blobClient = blobContainer.GetBlobClient($"{id}.{ext}");
+        var blobClient = blobContainer.GetBlobClient($"{name}{ext}");
 
         await blobClient.UploadAsync(file.OpenReadStream(), true);
 

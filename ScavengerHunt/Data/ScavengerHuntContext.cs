@@ -34,7 +34,6 @@ namespace ScavengerHunt.Data
             builder.Entity<Game>()
                 .ToContainer(nameof(Games))
                 .HasPartitionKey(nameof(Game.UserId))
-                .OwnsMany(l => l.Rooms)
                 .OwnsMany(r => r.Items);
 
             builder.Entity<Group>()

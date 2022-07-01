@@ -17,15 +17,20 @@ public class HomeControllerTests
 	private readonly Mock<IUserService> userRepo = new();
     private readonly Mock<ILogger<HomeController>> logger = new();
 	private readonly Mock<IHelperService> helpMethod = new();
+	private readonly Mock<IBlobService> blobService = new();
 	private readonly Random rand = new();
+	HomeController hc;
+
+	public HomeControllerTests()
+	{
+		hc = new(userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
+	}
 
 	[Fact]
 	public async void GetInfo_withInvalidUser_ReturnsNotFound()
 	{
 		//Arrange
 		helpMethod.Setup(method => method.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync((User?)null);
-		HomeController hc = new(userRepo.Object, logger.Object, helpMethod.Object);
-
 		//Act
 		var result = await hc.GetInfo();
 
@@ -39,7 +44,6 @@ public class HomeControllerTests
 		//Arrange
 		User expectedUser = CreateRandomUser();
 		helpMethod.Setup(method => method.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync(expectedUser);
-		var hc = new HomeController(userRepo.Object, logger.Object, helpMethod.Object);
 
 		//Act
 		var result = await hc.GetInfo();
@@ -56,7 +60,6 @@ public class HomeControllerTests
 	{
 		//Arrange
 		helpMethod.Setup(method => method.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync((User?)null);
-		HomeController hc = new(userRepo.Object, logger.Object, helpMethod.Object);
 
 		//Act
 		var result = await hc.GetScoreLog();
@@ -73,7 +76,6 @@ public class HomeControllerTests
 		expectedUser.UserLog.ScoreLog = new [] { CreateRandomScoreLog(), CreateRandomScoreLog(), 
 		CreateRandomScoreLog(), CreateRandomScoreLog(), CreateRandomScoreLog()};
 		helpMethod.Setup(method => method.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync(expectedUser);
-		var hc = new HomeController(userRepo.Object, logger.Object, helpMethod.Object);
 
 		//Act
 		var result = await hc.GetScoreLog();

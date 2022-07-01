@@ -21,7 +21,12 @@ namespace ScavengerHunt.Services
             return await dbSet.ToListAsync();
         }
 
-        public async Task<Group?> GetAsync(Guid id)
+        public async Task<Group?> GetAsync(Guid id, Guid groupId)
+        {
+            return await dbSet.FindAsync(id, groupId);
+        }
+
+        public async Task<Group?> GetByIdAsync(Guid id)
         {
             return await dbSet.FirstOrDefaultAsync(x => x.Id == id);
         }
@@ -36,9 +41,9 @@ namespace ScavengerHunt.Services
             dbSet.Update(entity);
         }
 
-        public async void DeleteAsync(Guid id)
+        public async void DeleteAsync(Guid id, Guid groupId)
         {
-            Group? entity = await GetAsync(id);
+            Group? entity = await GetAsync(id, groupId);
             if (entity != null)
             {
                 dbSet.Remove(entity);

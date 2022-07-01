@@ -10,7 +10,7 @@
         public string Country { get; set; }
         public Guid UserId { get; set; }
         public Coordinate Coordinate { get; set; }
-        public ICollection<Room> Rooms { get; set; }
+        public ICollection<Item> Items { get; set; }
         public string ImageName { get; set; }
         public int Difficulty { get; set; }
         public List<int> Ratings { get; set; }
@@ -26,7 +26,7 @@
             Address = "";
             Country = "";
             Coordinate = new Coordinate();
-            Rooms = new List<Room>();
+            Items = new List<Item>();
             ImageName = "";
             Difficulty = 0;
             Ratings = new List<int>();
@@ -45,7 +45,7 @@
             Country = country;
             UserId = userId;
             Coordinate = coordinate;
-            Rooms = new List<Room>();
+            Items = new List<Item>();
             ImageName = imageName;
             Difficulty = difficulty;
             Ratings = new List<int>();

@@ -2,16 +2,15 @@
 {
     public record Item
     {
+        public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public string ItemGame { get; set; }
         public string ImageName { get; set; }
 
-        public Item(string name, string description, string itemGame, string imageName)
+        public Item(string name, string description, string imageName)
         {
             Name = name;
             Description = description;
-            ItemGame = itemGame;
             ImageName = imageName;
         }
     }

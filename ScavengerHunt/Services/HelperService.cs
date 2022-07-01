@@ -32,6 +32,6 @@ public class HelperService : IHelperService
     {
         List<User> users = await userRepo.GetAllAsync();
         
-        return users.SingleOrDefault(x => x.Email == email);
+        return users.SingleOrDefault(x => x.Email.ToLower() == email.ToLower());
     }
 }

@@ -11,7 +11,7 @@
         public CoordinateDto Coordinate { get; set; }
         public string ImageName { get; set; }
         public int Difficulty { get; set; }
-        public List<int> Ratings { get; set; }
+        public Double Ratings { get; set; }
         public List<string> Tags { get; set; }
         public DateTimeOffset CreatedDate { get; set; }
         public DateTimeOffset LastUpdated { get; set; }

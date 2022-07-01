@@ -54,16 +54,7 @@ public class AuthController : ControllerBase
             return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message}));
         }
 
-        return CreatedAtAction(nameof(Register), new UserDto()
-        {
-            Id = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            UserLog = new(){
-                UserScore = user.UserLog.UserScore,
-                LastUpdated = user.UserLog.LastUpdated
-            }
-        });
+        return CreatedAtAction(nameof(Register), new {Id = user.Id});
     }
 
     //POST: /auth/login
@@ -195,12 +186,13 @@ public class AuthController : ControllerBase
         var user = await helpService.GetCurrentUser(HttpContext);
         if (user == null)
         {
-            return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
+            return NotFound(
+                new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
         }
 
         try
         {
-            var url = await blobService.SaveImage("profile", file.ImageFile, user.Id);
+            string url = await blobService.SaveImage("profile", file.ImageFile, user.Id.ToString());
             user.ProfileImage = url;
             userRepo.UpdateAsync(user);
             await userRepo.SaveChangesAsync();

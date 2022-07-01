@@ -14,14 +14,16 @@ namespace ScavengerHunt.Controllers
         private readonly IGroupService groupRepo;
         private readonly IUserService userRepo;
         private readonly ILogger<GroupController> logger;
-        private readonly IHelperService helpMethod;
+        private readonly IHelperService helpService;
+        private readonly IBlobService blobService;
 
-        public GroupController(IGroupService groupRepo, IUserService userRepo, ILogger<GroupController> logger, IHelperService help)
+        public GroupController(IGroupService groupRepo, IUserService userRepo, ILogger<GroupController> logger, IHelperService help, IBlobService blob)
         {
             this.groupRepo = groupRepo;
             this.userRepo = userRepo;
             this.logger = logger;
-            helpMethod = help;
+            helpService = help;
+            blobService = blob;
         }
 
         // GET: api/group
@@ -67,7 +69,7 @@ namespace ScavengerHunt.Controllers
             List<UserDto> userdt = new();
             List<ScoreLogDto> scoreLog = new();
 
-            group = await groupRepo.GetAsync(id);
+            group = await groupRepo.GetByIdAsync(id);
             if (group == null){ return NotFound("Group doesn't exist");}
 
             if (group.PastWinners.Any())
@@ -103,11 +105,10 @@ namespace ScavengerHunt.Controllers
         [HttpPost]
         public async Task<ActionResult> Create([FromBody] GroupCreateDto res)
         {
-            User? user;
             Group newgrp;
 
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            user = await helpMethod.GetCurrentUser(HttpContext);
+            var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return NotFound("User not found"); }
 
             newgrp = new()
@@ -115,6 +116,7 @@ namespace ScavengerHunt.Controllers
                 IsOpen = res.IsOpen,
                 Title = res.Title,
                 Description = res.Description,
+                GroupIcon = res.GroupIcon,
                 CreatedUserId = user.Id,
                 Members = new List<Guid> { user.Id},
                 PastWinners = new List<ScoreLog>(),
@@ -130,7 +132,7 @@ namespace ScavengerHunt.Controllers
                 return BadRequest(e.Message);
             }
 
-            return CreatedAtAction(nameof(Get), res);
+            return CreatedAtAction(nameof(Get), new {Id = newgrp.Id});
         }
 
         // PUT api/group/5
@@ -138,24 +140,21 @@ namespace ScavengerHunt.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(Guid id, [FromBody] GroupCreateDto res)
         {
-            User? user;
-            Group? grp;
             Group newgrp;
 
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            user = await helpMethod.GetCurrentUser(HttpContext);
+            var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return Unauthorized("User not found"); }
 
-            grp = await groupRepo.GetAsync(id);
+            var grp = await groupRepo.GetAsync(id, user.Id);
             if (grp == null){return NotFound("Group doesn't exist");}
-
-            if (grp.CreatedUserId != user.Id){return Forbid("Action only allowed by Owner");}
 
             newgrp = grp with
             {
                 IsOpen = res.IsOpen,
                 Title = res.Title,
-                Description = res.Description
+                Description = res.Description,
+                GroupIcon = res.GroupIcon
             };
 
             try
@@ -176,20 +175,12 @@ namespace ScavengerHunt.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(Guid id)
         {
-            User? user;
-            Group? grp;
-
-            user = await helpMethod.GetCurrentUser(HttpContext);
+            var user = await helpService.GetCurrentUser(HttpContext);
             if (user is null) { return NotFound("User not found"); }
-
-            grp = await groupRepo.GetAsync(id);
-            if (grp == null) { return NotFound("Group doesn't exist"); }
-
-            if (grp.CreatedUserId != user.Id) { return Forbid("Action only allowed by Owner"); }
 
             try
             {
-                groupRepo.DeleteAsync(grp.Id);
+                groupRepo.DeleteAsync(id, user.Id);
                 await groupRepo.SaveChangesAsync();
             }
             catch (Exception e)

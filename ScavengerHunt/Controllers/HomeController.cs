@@ -13,24 +13,25 @@ namespace ScavengerHunt.Controllers
     {
         private readonly IUserService userRepo;
         private readonly ILogger<HomeController> logger;
-        private readonly IHelperService helpMethod;
+        private readonly IHelperService helpService;
+        private readonly IBlobService blobService;
 
-        public HomeController(IUserService user, ILogger<HomeController> logger, IHelperService help)
+        public HomeController(IUserService user, ILogger<HomeController> logger, IHelperService help, IBlobService blob)
         {
             userRepo = user;
             this.logger = logger;
-            helpMethod = help;
+            helpService = help;
+            blobService = blob;
         }
 
         //GET /home
-        [Authorize]
-        [HttpGet("")]
+        [Authorize, HttpGet("")]
         public async Task<ActionResult<UserDto>> GetInfo()
         {
             User? user;
             UserDto userdt;
 
-            user = await helpMethod.GetCurrentUser(HttpContext);
+            user = await helpService.GetCurrentUser(HttpContext);
             if (user is null){return NotFound("User does not exist");}
 
             userdt = new()
@@ -56,7 +57,7 @@ namespace ScavengerHunt.Controllers
             User? user;
             List<ScoreLogDto> scoreloglist = new();
 
-            user = await helpMethod.GetCurrentUser(HttpContext);
+            user = await helpService.GetCurrentUser(HttpContext);
             if (user is null){return NotFound("User does not exist");}
 
             foreach(var scorelog in user.UserLog.ScoreLog)
@@ -71,6 +72,33 @@ namespace ScavengerHunt.Controllers
             }
 
             return scoreloglist;
+        }
+
+        [Authorize]
+        [HttpPut("UploadImage")]
+        public async Task<ActionResult> UploadImage([FromForm] FileModel file)
+        {
+            if(file.ImageFile == null) return BadRequest();
+
+            var user = await helpService.GetCurrentUser(HttpContext);
+            if (user == null)
+            {
+                return NotFound(
+                    new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
+            }
+
+            try
+            {
+                string date = DateTime.Now.ToBinary().ToString();
+                string name = user.Id.ToString() + date;
+                string url = await blobService.SaveImage("images", file.ImageFile, name);
+                return Created(url, new {ImagePath = url});
+            }
+            catch (Exception e)
+            {
+                logger.LogInformation("Possible Storage Error", e);
+                return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message, "Visit https://sh.jerishbovas.com/help"}));
+            }
         }
     }
 }
