@@ -106,7 +106,7 @@ public class HomeControllerTests
 				ScoreLog = new List<ScoreLog>()
 			},
             Games = new HashSet<Guid>(),
-            Groups = new HashSet<Guid>(),
+            Teams = new HashSet<Guid>(),
             CreatedDate = DateTimeOffset.UtcNow
 		};
 	}

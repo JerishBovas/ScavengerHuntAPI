@@ -26,7 +26,7 @@ namespace ScavengerHunt.Data
                     v => JsonConvert.SerializeObject(v),
                     v => JsonConvert.DeserializeObject<ICollection<Guid>>(v) ?? new List<Guid>(){Guid.Empty}));
 
-            userModel.Property(u => u.Groups)
+            userModel.Property(u => u.Teams)
                 .HasConversion(new ValueConverter<ICollection<Guid>, string>(
                     v => JsonConvert.SerializeObject(v),
                     v => JsonConvert.DeserializeObject<ICollection<Guid>>(v) ?? new List<Guid>(){Guid.Empty}));
@@ -36,19 +36,19 @@ namespace ScavengerHunt.Data
                 .HasPartitionKey(nameof(Game.UserId))
                 .OwnsMany(r => r.Items);
 
-            builder.Entity<Group>()
-                .ToContainer(nameof(Groups))
-                .HasPartitionKey(nameof(Group.CreatedUserId))
+            builder.Entity<Team>()
+                .ToContainer(nameof(Teams))
+                .HasPartitionKey(nameof(Team.CreatedUserId))
                 .OwnsMany(g => g.PastWinners);
 
-            builder.Entity<Group>().Property(u => u.Members)
+            builder.Entity<Team>().Property(u => u.Members)
                 .HasConversion(new ValueConverter<ICollection<Guid>, string>(
                     v => JsonConvert.SerializeObject(v),
                     v => JsonConvert.DeserializeObject<ICollection<Guid>>(v) ?? new List<Guid>(){Guid.Empty}));
         }
 
         public DbSet<Game>? Games { get; set; }
-        public DbSet<Group>? Groups { get; set; }
+        public DbSet<Team>? Teams { get; set; }
         public DbSet<User>? Users { get; set; }
     }
 }

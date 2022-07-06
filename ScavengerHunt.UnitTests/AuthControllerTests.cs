@@ -118,7 +118,7 @@ namespace ScavengerHunt.UnitTests
                 RefTokenExpiry = null,
                 UserLog = new(),
                 Games = new HashSet<Guid>(),
-                Groups = new HashSet<Guid>(),
+                Teams = new HashSet<Guid>(),
                 CreatedDate = DateTimeOffset.UtcNow
             };
             helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(user);

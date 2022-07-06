@@ -7,74 +7,74 @@ using ScavengerHunt.Services;
 
 namespace ScavengerHunt.Controllers
 {
-    [Route("api/group")]
+    [Route("api/team")]
     [ApiController]
-    public class GroupController : ControllerBase
+    public class TeamController : ControllerBase
     {
-        private readonly IGroupService groupRepo;
+        private readonly ITeamService teamRepo;
         private readonly IUserService userRepo;
-        private readonly ILogger<GroupController> logger;
+        private readonly ILogger<TeamController> logger;
         private readonly IHelperService helpService;
         private readonly IBlobService blobService;
 
-        public GroupController(IGroupService groupRepo, IUserService userRepo, ILogger<GroupController> logger, IHelperService help, IBlobService blob)
+        public TeamController(ITeamService teamRepo, IUserService userRepo, ILogger<TeamController> logger, IHelperService help, IBlobService blob)
         {
-            this.groupRepo = groupRepo;
+            this.teamRepo = teamRepo;
             this.userRepo = userRepo;
             this.logger = logger;
             helpService = help;
             blobService = blob;
         }
 
-        // GET: api/group
+        // GET: api/team
         [Authorize]
         [HttpGet]
-        public async Task<ActionResult<List<GroupDto>>> Get()
+        public async Task<ActionResult<List<TeamDto>>> Get()
         {
-            List<Group> Groups;
-            List<GroupDto> GroupsDto = new();
+            List<Team> Teams;
+            List<TeamDto> TeamsDto = new();
 
-            Groups = await groupRepo.GetAllAsync();
+            Teams = await teamRepo.GetAllAsync();
 
-            if (!Groups.Any())
+            if (!Teams.Any())
             {
                 return NoContent();
             }
 
-            foreach (var group in Groups)
+            foreach (var team in Teams)
             {
-                if (!group.IsOpen)
+                if (!team.IsOpen)
                 {
                     continue;
                 }
-                GroupDto grpDto = new()
+                TeamDto grpDto = new()
                 {
-                    Id = group.Id,
-                    IsOpen = group.IsOpen,
-                    Title = group.Title,
-                    Description = group.Description
+                    Id = team.Id,
+                    IsOpen = team.IsOpen,
+                    Title = team.Title,
+                    Description = team.Description
                 };
-                GroupsDto.Add(grpDto);
+                TeamsDto.Add(grpDto);
             }
-            return GroupsDto;
+            return TeamsDto;
         }
 
-        // GET api/group/5
+        // GET api/team/5
         [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult<GroupDetailDto>> Get(Guid id)
+        public async Task<ActionResult<TeamDetailDto>> Get(Guid id)
         {
-            GroupDetailDto dto;
-            Group? group;
+            TeamDetailDto dto;
+            Team? team;
             List<UserDto> userdt = new();
             List<ScoreLogDto> scoreLog = new();
 
-            group = await groupRepo.GetByIdAsync(id);
-            if (group == null){ return NotFound("Group doesn't exist");}
+            team = await teamRepo.GetByIdAsync(id);
+            if (team == null){ return NotFound("Team doesn't exist");}
 
-            if (group.PastWinners.Any())
+            if (team.PastWinners.Any())
             {
-                foreach (var item in group.PastWinners)
+                foreach (var item in team.PastWinners)
                 {
                     ScoreLogDto scoreLogDto = new()
                     {
@@ -89,23 +89,23 @@ namespace ScavengerHunt.Controllers
 
             dto = new()
             {
-                Id = group.Id,
-                IsOpen = group.IsOpen,
-                Title = group.Title,
-                Description = group.Description,
-                Members = group.Members,
+                Id = team.Id,
+                IsOpen = team.IsOpen,
+                Title = team.Title,
+                Description = team.Description,
+                Members = team.Members,
                 PastWinners = scoreLog,
             };
 
             return dto;
         }
 
-        // POST api/group
+        // POST api/team
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult> Create([FromBody] GroupCreateDto res)
+        public async Task<ActionResult> Create([FromBody] TeamCreateDto res)
         {
-            Group newgrp;
+            Team newgrp;
 
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
             var user = await helpService.GetCurrentUser(HttpContext);
@@ -116,7 +116,7 @@ namespace ScavengerHunt.Controllers
                 IsOpen = res.IsOpen,
                 Title = res.Title,
                 Description = res.Description,
-                GroupIcon = res.GroupIcon,
+                TeamIcon = res.TeamIcon,
                 CreatedUserId = user.Id,
                 Members = new List<Guid> { user.Id},
                 PastWinners = new List<ScoreLog>(),
@@ -124,8 +124,8 @@ namespace ScavengerHunt.Controllers
 
             try
             {
-                await groupRepo.CreateAsync(newgrp);
-                await groupRepo.SaveChangesAsync();
+                await teamRepo.CreateAsync(newgrp);
+                await teamRepo.SaveChangesAsync();
             }
             catch (Exception e)
             {
@@ -135,32 +135,32 @@ namespace ScavengerHunt.Controllers
             return CreatedAtAction(nameof(Get), new {Id = newgrp.Id});
         }
 
-        // PUT api/group/5
+        // PUT api/team/5
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(Guid id, [FromBody] GroupCreateDto res)
+        public async Task<ActionResult> Update(Guid id, [FromBody] TeamCreateDto res)
         {
-            Group newgrp;
+            Team newgrp;
 
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return Unauthorized("User not found"); }
 
-            var grp = await groupRepo.GetAsync(id, user.Id);
-            if (grp == null){return NotFound("Group doesn't exist");}
+            var grp = await teamRepo.GetAsync(id, user.Id);
+            if (grp == null){return NotFound("Team doesn't exist");}
 
             newgrp = grp with
             {
                 IsOpen = res.IsOpen,
                 Title = res.Title,
                 Description = res.Description,
-                GroupIcon = res.GroupIcon
+                TeamIcon = res.TeamIcon
             };
 
             try
             {
-                groupRepo.UpdateAsync(newgrp);
-                await groupRepo.SaveChangesAsync();
+                teamRepo.UpdateAsync(newgrp);
+                await teamRepo.SaveChangesAsync();
             }
             catch (Exception e)
             {
@@ -170,7 +170,7 @@ namespace ScavengerHunt.Controllers
             return Ok();
         }
 
-        // DELETE api/group/5
+        // DELETE api/team/5
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(Guid id)
@@ -180,8 +180,8 @@ namespace ScavengerHunt.Controllers
 
             try
             {
-                groupRepo.DeleteAsync(id, user.Id);
-                await groupRepo.SaveChangesAsync();
+                teamRepo.DeleteAsync(id, user.Id);
+                await teamRepo.SaveChangesAsync();
             }
             catch (Exception e)
             {

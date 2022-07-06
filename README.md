@@ -40,15 +40,15 @@ These are the available API endpoints at the time of writing. More coming in the
 | https://scavengerhuntapis.azurewebsites.net/api/game/{id}/{itemId} [PUT] | Update Item |
 | https://scavengerhuntapis.azurewebsites.net/api/game/{id}/{itemId} [DELETE] | Delete Item |
 
-### Group Controller
+### Team Controller
 
 | Endpoint                           | Description                         |
 | ---------------------------------- | ----------------------------------- |
-| https://scavengerhuntapis.azurewebsites.net/api/group/ [GET] | Get the list of Groups |
-| https://scavengerhuntapis.azurewebsites.net/api/group/{id} [GET] | Get a Group by ID |
-| https://scavengerhuntapis.azurewebsites.net/api/group/ [POST] | Create Group |
-| https://scavengerhuntapis.azurewebsites.net/api/group/{id} [PUT] | Update Group |
-| https://scavengerhuntapis.azurewebsites.net/api/group/{id} [DELETE] | Delete Group |
+| https://scavengerhuntapis.azurewebsites.net/api/team/ [GET] | Get the list of Teams |
+| https://scavengerhuntapis.azurewebsites.net/api/team/{id} [GET] | Get a Team by ID |
+| https://scavengerhuntapis.azurewebsites.net/api/team/ [POST] | Create Team |
+| https://scavengerhuntapis.azurewebsites.net/api/team/{id} [PUT] | Update Team |
+| https://scavengerhuntapis.azurewebsites.net/api/team/{id} [DELETE] | Delete Team |
 
 ## Local Development Setup
 

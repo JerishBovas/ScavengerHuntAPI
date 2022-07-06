@@ -13,7 +13,7 @@
         public DateTime? RefTokenExpiry { get; set; }
         public UserLog UserLog { get; set; }
         public ICollection<Guid> Games { get; set; }
-        public ICollection<Guid> Groups { get; set; }
+        public ICollection<Guid> Teams { get; set; }
         public DateTimeOffset CreatedDate { get; set; }
 
         public User()
@@ -29,7 +29,7 @@
             RefTokenExpiry = null;
             UserLog = new();
             Games = new HashSet<Guid>();
-            Groups = new HashSet<Guid>();
+            Teams = new HashSet<Guid>();
             CreatedDate = DateTimeOffset.UtcNow;
         }
 
@@ -44,16 +44,16 @@
             PasswordSalt = passwordSalt;
             UserLog = new();
             Games = new HashSet<Guid>();
-            Groups = new HashSet<Guid>();
+            Teams = new HashSet<Guid>();
             CreatedDate = DateTimeOffset.UtcNow;
         }
 
-        public User(Guid id, string name, string email, string passwordHash, string passwordSalt, UserLog userLog, ICollection<Guid> games, ICollection<Guid> groups, DateTimeOffset createdDate) : this(name, email, passwordHash, passwordSalt)
+        public User(Guid id, string name, string email, string passwordHash, string passwordSalt, UserLog userLog, ICollection<Guid> games, ICollection<Guid> teams, DateTimeOffset createdDate) : this(name, email, passwordHash, passwordSalt)
         {
             Id = id;
             UserLog = userLog;
             Games = games;
-            Groups = groups;
+            Teams = teams;
             CreatedDate = createdDate;
         }
     }

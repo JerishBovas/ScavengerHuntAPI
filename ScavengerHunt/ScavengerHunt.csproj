@@ -38,14 +38,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="DTOs\Group\" />
+    <None Remove="DTOs\Team\" />
     <None Remove="DTOs\Coordinate\" />
     <None Remove="DTOs\Item\" />
     <None Remove="DTOs\Game\" />
     <None Remove="DTOs\Room\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="DTOs\Group\" />
+    <Folder Include="DTOs\Team\" />
     <Folder Include="DTOs\Coordinate\" />
     <Folder Include="DTOs\Item\" />
     <Folder Include="DTOs\Game\" />

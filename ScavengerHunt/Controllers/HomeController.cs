@@ -12,16 +12,18 @@ namespace ScavengerHunt.Controllers
     public class HomeController : ControllerBase
     {
         private readonly IUserService userRepo;
+        private readonly IGameService gameService;
         private readonly ILogger<HomeController> logger;
         private readonly IHelperService helpService;
         private readonly IBlobService blobService;
 
-        public HomeController(IUserService user, ILogger<HomeController> logger, IHelperService help, IBlobService blob)
+        public HomeController(IUserService user, ILogger<HomeController> logger, IHelperService help, IBlobService blob, IGameService gameService)
         {
             userRepo = user;
             this.logger = logger;
             helpService = help;
             blobService = blob;
+            this.gameService = gameService;
         }
 
         //GET /home
@@ -100,6 +102,63 @@ namespace ScavengerHunt.Controllers
                 logger.LogInformation("Possible Storage Error", e);
                 return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message, "Visit https://sh.jerishbovas.com/help"}));
             }
+        }
+    
+        [AllowAnonymous, HttpGet("leaderboard")]
+        public async Task<ActionResult> GetLeaderBoard()
+        {
+            List<UserDto> leaderBoardList = new();
+            int count = 0;
+
+            List<User> users = await userRepo.GetAllAsync();
+
+            foreach(var user in users)
+            {
+                if(count < 5)
+                {
+                    UserDto newdt = new()
+                    {
+                        Id = user.Id,
+                        Name = user.Name,
+                        Email = user.Email,
+                        ProfileImage = user.ProfileImage
+                    };
+                    leaderBoardList.Add(newdt);
+                    count++;
+                }
+                else{
+                    break;
+                }
+            }
+
+            return Ok(leaderBoardList);
+        }
+    
+        [AllowAnonymous, HttpGet("PopularGames")]
+        public async Task<List<GameDto>> GetPopularGames()
+        {
+            List<GameDto> popularList = new();
+            int count = 0;
+
+            List<Game> games = await gameService.GetAllAsync();
+
+            foreach(var game in games)
+            {
+                if(count < 5)
+                {
+                    GameDto newdt = new()
+                    {
+                        
+                    };
+                    popularList.Add(newdt);
+                    count++;
+                }
+                else{
+                    break;
+                }
+            }
+
+            return popularList;
         }
     }
 }

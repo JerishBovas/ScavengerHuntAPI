@@ -23,7 +23,7 @@ builder.Services.AddAzureClients(options =>
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IGameService, GameService>();
-builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IBlobService, BlobService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddScoped<IHelperService, HelperService>();
