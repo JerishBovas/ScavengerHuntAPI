@@ -10,6 +10,7 @@ public class BlobService : IBlobService
     {
         this.blobServiceClient = blobServiceClient;
     }
+
     public async Task<string> SaveImage(string container, IFormFile file, string name)
     {
         var blobContainer = blobServiceClient.GetBlobContainerClient(container);
@@ -23,5 +24,12 @@ public class BlobService : IBlobService
         await blobClient.UploadAsync(file.OpenReadStream(), false);
 
         return blobClient.Uri.AbsoluteUri.ToString();
+    }
+
+    public void DeleteImage(string container, string name)
+    {
+        var blobContainer = blobServiceClient.GetBlobContainerClient(container);
+
+        blobContainer.GetBlobClient(name).DeleteIfExists();
     }
 }

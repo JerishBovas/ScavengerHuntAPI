@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
@@ -129,7 +128,7 @@ namespace ScavengerHunt.Controllers
             user = await helpService.GetCurrentUser(HttpContext);
             if (user == null){return NotFound("User does not exist");}
 
-            Coordinate coordinate = new Coordinate()
+            Coordinate coordinate = new()
             {
                 Latitude = res.Coordinate.Latitude,
                 Longitude = res.Coordinate.Longitude,
@@ -146,7 +145,7 @@ namespace ScavengerHunt.Controllers
                 return BadRequest(e.Message);
             }
 
-            return CreatedAtAction(nameof(Create), new {Id = newgame.Id});
+            return CreatedAtAction(nameof(Create), new { newgame.Id});
         }
 
         // PUT api/Game/5

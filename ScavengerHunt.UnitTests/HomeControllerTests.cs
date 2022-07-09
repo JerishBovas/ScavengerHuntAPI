@@ -18,12 +18,13 @@ public class HomeControllerTests
     private readonly Mock<ILogger<HomeController>> logger = new();
 	private readonly Mock<IHelperService> helpMethod = new();
 	private readonly Mock<IBlobService> blobService = new();
+	private readonly Mock<IGameService> gameService = new();
 	private readonly Random rand = new();
 	HomeController hc;
 
 	public HomeControllerTests()
 	{
-		hc = new(userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
+		hc = new(userRepo.Object, logger.Object, helpMethod.Object, blobService.Object, gameService.Object);
 	}
 
 	[Fact]

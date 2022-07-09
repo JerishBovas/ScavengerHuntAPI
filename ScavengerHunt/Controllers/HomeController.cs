@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;

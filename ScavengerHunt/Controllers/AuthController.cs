@@ -54,7 +54,7 @@ public class AuthController : ControllerBase
             return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message}));
         }
 
-        return CreatedAtAction(nameof(Register), new {Id = user.Id});
+        return CreatedAtAction(nameof(Register), new {user.Id});
     }
 
     //POST: /auth/login
@@ -193,6 +193,7 @@ public class AuthController : ControllerBase
         try
         {
             string url = await blobService.SaveImage("profile", file.ImageFile, user.Id.ToString());
+            blobService.DeleteImage("profile", user.ProfileImage);
             user.ProfileImage = url;
             userRepo.UpdateAsync(user);
             await userRepo.SaveChangesAsync();
