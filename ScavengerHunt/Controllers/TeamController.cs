@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
@@ -66,7 +65,6 @@ namespace ScavengerHunt.Controllers
         {
             TeamDetailDto dto;
             Team? team;
-            List<UserDto> userdt = new();
             List<ScoreLogDto> scoreLog = new();
 
             team = await teamRepo.GetByIdAsync(id);
@@ -132,7 +130,7 @@ namespace ScavengerHunt.Controllers
                 return BadRequest(e.Message);
             }
 
-            return CreatedAtAction(nameof(Get), new {Id = newgrp.Id});
+            return CreatedAtAction(nameof(Get), new {newgrp.Id});
         }
 
         // PUT api/team/5
