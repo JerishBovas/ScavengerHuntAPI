@@ -12,7 +12,7 @@ namespace ScavengerHunt.Controllers {
         [HttpGet]
         public async Task<IActionResult> Index() {
             return Content(
-                await System.IO.File.ReadAllTextAsync(Path.Combine(_hostingEnvironment.ContentRootPath, ".well-known/apple-app-site-association")),
+                await System.IO.File.ReadAllTextAsync(Path.Combine(_hostingEnvironment.ContentRootPath, "wwwroot/.well-known/apple-app-site-association")),
                 "text/plain"
             );
         }
