@@ -44,6 +44,19 @@ public class AuthController : ControllerBase
 
         var user = new User(request.Name, request.Email.ToLower(), passwordHash, salt);
 
+        List<Claim> claims = new()
+        {
+            new Claim(ClaimTypes.Name, user.Name),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+        };
+
+        var accessToken = tokenService.GenerateAccessToken(claims);
+        var refreshToken = tokenService.GenerateRefreshToken();
+
+        user.RefToken = refreshToken;
+        user.RefTokenExpiry = DateTime.Now.AddDays(7);
+
         try
         {
             await userRepo.CreateAsync(user);
@@ -54,7 +67,11 @@ public class AuthController : ControllerBase
             return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message}));
         }
 
-        return CreatedAtAction(nameof(Register), new {user.Id});
+        return Ok(new AuthResponseDto
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken
+        });
     }
 
     //POST: /auth/login
