@@ -158,6 +158,9 @@ namespace ScavengerHunt.Controllers
         {
             List<Game> games = await gameService.GetAllAsync();
             games.Sort(delegate(Game x, Game y) {
+                double xVal = x.Ratings.Count == 0 ? 0 : x.Ratings.Average();
+                double yVal = y.Ratings.Count == 0 ? 0 : y.Ratings.Average();
+                
                 return -1 * (x.Ratings.Average().CompareTo(y.Ratings.Average()));
             });
 
