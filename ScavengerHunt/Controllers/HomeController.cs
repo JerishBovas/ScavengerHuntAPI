@@ -15,6 +15,10 @@ namespace ScavengerHunt.Controllers
         private readonly ILogger<HomeController> logger;
         private readonly IHelperService helpService;
         private readonly IBlobService blobService;
+        private static List<User> leaderboard = new();
+        private static DateTime? leaderboardExpiry = null;
+        private static List<Game> popularGames = new();
+        private static DateTime? popularGamesExpiry = null;
 
         public HomeController(IUserService user, ILogger<HomeController> logger, IHelperService help, IBlobService blob, IGameService gameService)
         {
@@ -52,8 +56,7 @@ namespace ScavengerHunt.Controllers
         }
 
         //GET /home/userlog
-        [Authorize]
-        [HttpGet("scores")]
+        [Authorize, HttpGet("scores")]
         public async Task<ActionResult<List<ScoreLogDto>>> GetScoreLog()
         {
             User? user;
@@ -75,89 +78,90 @@ namespace ScavengerHunt.Controllers
 
             return scoreloglist;
         }
-
-        [Authorize]
-        [HttpPut("UploadImage")]
-        public async Task<ActionResult> UploadImage([FromForm] FileModel file)
-        {
-            if(file.ImageFile == null) return BadRequest();
-
-            var user = await helpService.GetCurrentUser(HttpContext);
-            if (user == null)
-            {
-                return NotFound(
-                    new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
-            }
-
-            try
-            {
-                string date = DateTime.Now.ToBinary().ToString();
-                string name = user.Id.ToString() + date;
-                string url = await blobService.SaveImage("images", file.ImageFile, name);
-                return Created(url, new {ImagePath = url});
-            }
-            catch (Exception e)
-            {
-                logger.LogInformation("Possible Storage Error", e);
-                return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message, "Visit https://sh.jerishbovas.com/help"}));
-            }
-        }
     
+        //Get /home/leaderboard
         [AllowAnonymous, HttpGet("leaderboard")]
         public async Task<ActionResult> GetLeaderBoard()
         {
             List<UserDto> leaderBoardList = new();
-            int count = 0;
 
-            List<User> users = await userRepo.GetAllAsync();
-
-            foreach(var user in users)
+            if(leaderboardExpiry is null || leaderboardExpiry < DateTime.Now)
             {
-                if(count < 5)
+                await updateLeaderboard();
+                leaderboardExpiry = DateTime.Now.AddMinutes(1);
+            }
+            foreach(var user in leaderboard)
+            {
+                UserDto newdt = new()
                 {
-                    UserDto newdt = new()
-                    {
-                        Id = user.Id,
-                        Name = user.Name,
-                        Email = user.Email,
-                        ProfileImage = user.ProfileImage
-                    };
-                    leaderBoardList.Add(newdt);
-                    count++;
-                }
-                else{
-                    break;
-                }
+                    Id = user.Id,
+                    Name = user.Name,
+                    Email = user.Email,
+                    ProfileImage = user.ProfileImage,
+                    UserLog = new(){
+                        UserScore = user.UserLog.UserScore,
+                        LastUpdated = user.UserLog.LastUpdated
+                    }
+                };
+                leaderBoardList.Add(newdt);
             }
 
             return Ok(leaderBoardList);
         }
     
+        //Get /home/populargames
         [AllowAnonymous, HttpGet("PopularGames")]
-        public async Task<List<GameDto>> GetPopularGames()
+        public async Task<ActionResult> GetPopularGames()
         {
-            List<GameDto> popularList = new();
-            int count = 0;
+            List<GameDto> popularGamesList = new();
 
-            List<Game> games = await gameService.GetAllAsync();
-
-            foreach(var game in games)
+            if(popularGamesExpiry is null || popularGamesExpiry < DateTime.Now)
             {
-                if(count < 5)
+                await updatePopularGames();
+                popularGamesExpiry = DateTime.Now.AddMinutes(1);
+            }
+            foreach(var game in popularGames)
+            {
+                if(game.IsPrivate) continue;
+                GameDto newdt = new()
                 {
-                    GameDto newdt = new()
-                    {
-                        
-                    };
-                    popularList.Add(newdt);
-                    count++;
-                }
-                else{
-                    break;
-                }
+                    Id = game.Id,
+                    IsPrivate = game.IsPrivate,
+                    Name = game.Name,
+                    Description = game.Description,
+                    Address = game.Address,
+                    Country = game.Country,
+                    Coordinate = new(){Latitude = game.Coordinate.Latitude, Longitude = game.Coordinate.Longitude},
+                    ImageName = game.ImageName,
+                    Difficulty = game.Difficulty,
+                    Ratings = game.Ratings.Average(),
+                    Tags = game.Tags,
+                    CreatedDate = game.CreatedDate,
+                    LastUpdated = game.LastUpdated
+                };
+                popularGamesList.Add(newdt);
             }
 
-            return popularList;
+            return Ok(popularGamesList);
+        }
+
+        private async Task updateLeaderboard()
+        {
+            List<User> users = await userRepo.GetAllAsync();
+            users.Sort(delegate(User x, User y) {
+                return -1 * (x.UserLog.UserScore.CompareTo(y.UserLog.UserScore));
+            });
+
+            leaderboard = users.Take(5).ToList();
+        }
+        private async Task updatePopularGames()
+        {
+            List<Game> games = await gameService.GetAllAsync();
+            games.Sort(delegate(Game x, Game y) {
+                return -1 * (x.Ratings.Average().CompareTo(y.Ratings.Average()));
+            });
+
+            popularGames = games.Take(5).ToList();
         }
     }
 }

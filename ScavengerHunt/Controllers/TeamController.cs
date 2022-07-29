@@ -168,6 +168,33 @@ namespace ScavengerHunt.Controllers
             return Ok();
         }
 
+        [Authorize]
+        [HttpPut("UploadImage")]
+        public async Task<ActionResult> UploadImage([FromForm] FileModel file)
+        {
+            if(file.ImageFile == null) return BadRequest();
+
+            var user = await helpService.GetCurrentUser(HttpContext);
+            if (user == null)
+            {
+                return NotFound(
+                    new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
+            }
+
+            try
+            {
+                string date = DateTime.Now.ToBinary().ToString();
+                string name = user.Id.ToString() + date;
+                string url = await blobService.SaveImage("teams", file.ImageFile, name);
+                return Created(url, new {ImagePath = url});
+            }
+            catch (Exception e)
+            {
+                logger.LogInformation("Possible Storage Error", e);
+                return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message, "Visit https://sh.jerishbovas.com/help"}));
+            }
+        }
+
         // DELETE api/team/5
         [Authorize]
         [HttpDelete("{id}")]
