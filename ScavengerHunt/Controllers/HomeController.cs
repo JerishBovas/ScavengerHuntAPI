@@ -161,7 +161,7 @@ namespace ScavengerHunt.Controllers
                 double xVal = x.Ratings.Count == 0 ? 0 : x.Ratings.Average();
                 double yVal = y.Ratings.Count == 0 ? 0 : y.Ratings.Average();
                 
-                return -1 * (x.Ratings.Average().CompareTo(y.Ratings.Average()));
+                return -1 * (xVal.CompareTo(yVal));
             });
 
             popularGames = games.Take(5).ToList();
