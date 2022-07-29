@@ -37,7 +37,7 @@ namespace ScavengerHunt.Controllers
 
             if (!Teams.Any())
             {
-                return NoContent();
+                return TeamsDto;
             }
 
             foreach (var team in Teams)

@@ -36,7 +36,7 @@ namespace ScavengerHunt.Controllers
 
             if(!games.Any())
             {
-                return NoContent();
+                return gamedto;
             }
 
             foreach(var game in games)
