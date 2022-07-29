@@ -41,7 +41,7 @@ namespace ScavengerHunt.Controllers
 
             userdt = new()
             {
-                Id = user.Id,
+                Id = user.id,
                 Name = user.Name,
                 Email = user.Email,
                 ProfileImage = user.ProfileImage,
@@ -94,7 +94,7 @@ namespace ScavengerHunt.Controllers
             {
                 UserDto newdt = new()
                 {
-                    Id = user.Id,
+                    Id = user.id,
                     Name = user.Name,
                     Email = user.Email,
                     ProfileImage = user.ProfileImage,
@@ -125,7 +125,7 @@ namespace ScavengerHunt.Controllers
                 if(game.IsPrivate) continue;
                 GameDto newdt = new()
                 {
-                    Id = game.Id,
+                    Id = game.id,
                     IsPrivate = game.IsPrivate,
                     Name = game.Name,
                     Description = game.Description,

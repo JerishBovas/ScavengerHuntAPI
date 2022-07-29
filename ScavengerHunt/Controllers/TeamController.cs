@@ -48,7 +48,7 @@ namespace ScavengerHunt.Controllers
                 }
                 TeamDto grpDto = new()
                 {
-                    Id = team.Id,
+                    Id = team.id,
                     IsOpen = team.IsOpen,
                     Title = team.Title,
                     Description = team.Description
@@ -87,7 +87,7 @@ namespace ScavengerHunt.Controllers
 
             dto = new()
             {
-                Id = team.Id,
+                Id = team.id,
                 IsOpen = team.IsOpen,
                 Title = team.Title,
                 Description = team.Description,
@@ -115,8 +115,8 @@ namespace ScavengerHunt.Controllers
                 Title = res.Title,
                 Description = res.Description,
                 TeamIcon = res.TeamIcon,
-                CreatedUserId = user.Id,
-                Members = new List<Guid> { user.Id},
+                CreatedUserId = user.id,
+                Members = new List<Guid> { user.id},
                 PastWinners = new List<ScoreLog>(),
             };
 
@@ -130,7 +130,7 @@ namespace ScavengerHunt.Controllers
                 return BadRequest(e.Message);
             }
 
-            return CreatedAtAction(nameof(Get), new {newgrp.Id});
+            return CreatedAtAction(nameof(Get), new {newgrp.id});
         }
 
         // PUT api/team/5
@@ -144,7 +144,7 @@ namespace ScavengerHunt.Controllers
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return Unauthorized("User not found"); }
 
-            var grp = await teamRepo.GetAsync(id, user.Id);
+            var grp = await teamRepo.GetAsync(id, user.id);
             if (grp == null){return NotFound("Team doesn't exist");}
 
             newgrp = grp with
@@ -184,7 +184,7 @@ namespace ScavengerHunt.Controllers
             try
             {
                 string date = DateTime.Now.ToBinary().ToString();
-                string name = user.Id.ToString() + date;
+                string name = user.id.ToString() + date;
                 string url = await blobService.SaveImage("teams", file.ImageFile, name);
                 return Created(url, new {ImagePath = url});
             }
@@ -205,7 +205,7 @@ namespace ScavengerHunt.Controllers
 
             try
             {
-                teamRepo.DeleteAsync(id, user.Id);
+                teamRepo.DeleteAsync(id, user.id);
                 await teamRepo.SaveChangesAsync();
             }
             catch (Exception e)

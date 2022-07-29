@@ -108,7 +108,7 @@ namespace ScavengerHunt.UnitTests
             CreatePassword(loginItem.Password, out string hash, out string salt);
             User user = new()
             {
-                Id = Guid.NewGuid(),
+                id = Guid.NewGuid(),
                 Name = Guid.NewGuid().ToString(),
                 Email = loginItem.Email,
                 Role = "user",

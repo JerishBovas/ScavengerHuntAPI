@@ -47,7 +47,7 @@ namespace ScavengerHunt.Controllers
                 }
                 GameDto gameDto = new()
                 {
-                    Id = game.Id,
+                    Id = game.id,
                     IsPrivate = game.IsPrivate,
                     Name = game.Name,
                     Description = game.Description,
@@ -85,7 +85,7 @@ namespace ScavengerHunt.Controllers
                 {
                     ItemDto itemDto = new()
                     {
-                        Id = item.Id,
+                        Id = item.id,
                         Name = item.Name,
                         Description = item.Description,
                         ImageName = item.ImageName,
@@ -96,7 +96,7 @@ namespace ScavengerHunt.Controllers
 
             gamedto = new()
             {
-                Id = game.Id,
+                Id = game.id,
                 IsPrivate = game.IsPrivate,
                 Name = game.Name,
                 Description = game.Description,
@@ -121,11 +121,8 @@ namespace ScavengerHunt.Controllers
         [Authorize, HttpPost]
         public async Task<ActionResult> Create([FromBody] GameCreateDto res)
         {
-            User? user;
-            Game newgame;
-
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            user = await helpService.GetCurrentUser(HttpContext);
+            var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null){return NotFound("User does not exist");}
 
             Coordinate coordinate = new()
@@ -134,7 +131,19 @@ namespace ScavengerHunt.Controllers
                 Longitude = res.Coordinate.Longitude,
             };
 
-            newgame = new(res.IsPrivate, res.Name, res.Description, res.Address, res.Country, user.Id, coordinate, res.ImageName, res.Difficulty, res.Tags);
+            Game newgame = new()
+            {
+                IsPrivate = res.IsPrivate,
+                Name = res.Name,
+                Description = res.Description,
+                Address = res.Address,
+                Country = res.Country,
+                UserId = user.id,
+                Coordinate = coordinate,
+                ImageName = res.ImageName,
+                Difficulty = res.Difficulty,
+                Tags = res.Tags
+            };
 
             try
             {
@@ -145,7 +154,7 @@ namespace ScavengerHunt.Controllers
                 return BadRequest(e.Message);
             }
 
-            return CreatedAtAction(nameof(Create), new { newgame.Id});
+            return CreatedAtAction(nameof(Create), new { newgame.id});
         }
 
         // PUT api/Game/5
@@ -157,7 +166,7 @@ namespace ScavengerHunt.Controllers
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return NotFound("User does not exist"); }
 
-            var game = await gameRepo.GetAsync(id, user.Id);
+            var game = await gameRepo.GetAsync(id, user.id);
             if (game == null){ return NotFound("Game not found");}
 
             var newgame = game with
@@ -207,7 +216,7 @@ namespace ScavengerHunt.Controllers
             try
             {
                 string date = DateTime.Now.ToBinary().ToString();
-                string name = user.Id.ToString() + date;
+                string name = user.id.ToString() + date;
                 string url = await blobService.SaveImage("games", file.ImageFile, name);
                 return Created(url, new {ImagePath = url});
             }
@@ -228,7 +237,7 @@ namespace ScavengerHunt.Controllers
 
             try
             {
-                gameRepo.DeleteAsync(id, user.Id);
+                gameRepo.DeleteAsync(id, user.id);
                 await gameRepo.SaveChangesAsync();
             }
             catch (Exception e)
@@ -247,10 +256,15 @@ namespace ScavengerHunt.Controllers
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null){return NotFound("User does not exist");}
 
-            var game = await gameRepo.GetAsync(id, user.Id);
+            var game = await gameRepo.GetAsync(id, user.id);
             if(game == null){ return NotFound("Game does not exist!");}
 
-            var item = new Item(res.Name, res.Description, res.ImageName);
+            var item = new Item
+            {
+                Name = res.Name,
+                Description = res.Description,
+                ImageName = res.ImageName
+            };
             game.Items.Add(item);
 
             try
@@ -273,10 +287,10 @@ namespace ScavengerHunt.Controllers
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return NotFound("User does not exist"); }
 
-            var game = await gameRepo.GetAsync(id, user.Id);
+            var game = await gameRepo.GetAsync(id, user.id);
             if (game == null){ return NotFound("Game not found");}
 
-            var item = game.Items.Where(x => x.Id == itemId).FirstOrDefault();
+            var item = game.Items.Where(x => x.id == itemId).FirstOrDefault();
             if (item == null){ return NotFound("Item not found");}
 
             item.Name = res.Name;
@@ -303,10 +317,10 @@ namespace ScavengerHunt.Controllers
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return NotFound("User does not exist"); }
 
-            var game = await gameRepo.GetAsync(id, user.Id);
+            var game = await gameRepo.GetAsync(id, user.id);
             if(game == null){ return NotFound("Game does not exist!");}
 
-            var item = game.Items.Where(x => x.Id == itemId).FirstOrDefault();
+            var item = game.Items.Where(x => x.id == itemId).FirstOrDefault();
             if (item == null){ return NotFound("Item not found");}
 
             game.Items.Remove(item);

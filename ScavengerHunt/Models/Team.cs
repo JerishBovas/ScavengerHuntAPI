@@ -1,8 +1,10 @@
-﻿namespace ScavengerHunt.Models
+﻿using System.Text.Json.Serialization;
+
+namespace ScavengerHunt.Models
 {
     public record Team
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid id { get; set; } = Guid.NewGuid();
         public bool IsOpen { get; set; }
         public string Title { get; set; } = "";
         public string Description { get; set; } = "";

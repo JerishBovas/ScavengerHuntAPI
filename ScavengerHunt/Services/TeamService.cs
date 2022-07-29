@@ -28,7 +28,7 @@ namespace ScavengerHunt.Services
 
         public async Task<Team?> GetByIdAsync(Guid id)
         {
-            return await dbSet.FirstOrDefaultAsync(x => x.Id == id);
+            return await dbSet.FirstOrDefaultAsync(x => x.id == id);
         }
 
         public async Task CreateAsync(Team entity)

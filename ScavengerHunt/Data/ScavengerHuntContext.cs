@@ -17,7 +17,7 @@ namespace ScavengerHunt.Data
             var userModel = builder.Entity<User>();
             
             userModel.ToContainer(nameof(Users))
-                .HasPartitionKey(nameof(User.Id))
+                .HasPartitionKey(nameof(User.id))
                 .OwnsOne(u => u.UserLog)
                 .OwnsMany(u => u.ScoreLog);
 

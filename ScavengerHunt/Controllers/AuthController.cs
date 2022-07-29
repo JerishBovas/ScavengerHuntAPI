@@ -42,12 +42,18 @@ public class AuthController : ControllerBase
 
         CreatePassword(request.Password, out string passwordHash, out string salt);
 
-        var user = new User(request.Name, request.Email.ToLower(), passwordHash, salt);
+        var user = new User
+        {
+            Name = request.Name,
+            Email = request.Email.ToLower(),
+            PasswordHash = passwordHash,
+            PasswordSalt = salt
+        };
 
         List<Claim> claims = new()
         {
             new Claim(ClaimTypes.Name, user.Name),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
         };
 
@@ -93,7 +99,7 @@ public class AuthController : ControllerBase
         List<Claim> claims = new()
         {
             new Claim(ClaimTypes.Name, user.Name),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
         };
 
@@ -209,7 +215,7 @@ public class AuthController : ControllerBase
 
         try
         {
-            string url = await blobService.SaveImage("profile", file.ImageFile, user.Id.ToString());
+            string url = await blobService.SaveImage("profile", file.ImageFile, user.id.ToString());
             blobService.DeleteImage("profile", user.ProfileImage);
             user.ProfileImage = url;
             userRepo.UpdateAsync(user);
