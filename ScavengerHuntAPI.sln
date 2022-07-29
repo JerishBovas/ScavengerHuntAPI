@@ -6,8 +6,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScavengerHunt", "ScavengerH
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScavengerHunt.UnitTests", "ScavengerHunt.UnitTests\ScavengerHunt.UnitTests.csproj", "{3D091943-64B0-499B-8BCD-EE2B5B4142F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScavengerHuntFunctions", "ScavengerHuntFunctions\ScavengerHuntFunctions.csproj", "{D95EB429-429D-4EEC-BDBA-3969E76C7BBB}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,10 +20,6 @@ Global
 		{3D091943-64B0-499B-8BCD-EE2B5B4142F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D091943-64B0-499B-8BCD-EE2B5B4142F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D091943-64B0-499B-8BCD-EE2B5B4142F2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D95EB429-429D-4EEC-BDBA-3969E76C7BBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D95EB429-429D-4EEC-BDBA-3969E76C7BBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D95EB429-429D-4EEC-BDBA-3969E76C7BBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D95EB429-429D-4EEC-BDBA-3969E76C7BBB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
