@@ -88,7 +88,7 @@ namespace ScavengerHunt.Controllers
             if(leaderboardExpiry is null || leaderboardExpiry < DateTime.Now)
             {
                 await updateLeaderboard();
-                leaderboardExpiry = DateTime.Now.AddMinutes(1);
+                leaderboardExpiry = DateTime.Now.AddMinutes(60);
             }
             foreach(var user in leaderboard)
             {
@@ -118,7 +118,7 @@ namespace ScavengerHunt.Controllers
             if(popularGamesExpiry is null || popularGamesExpiry < DateTime.Now)
             {
                 await updatePopularGames();
-                popularGamesExpiry = DateTime.Now.AddMinutes(1);
+                popularGamesExpiry = DateTime.Now.AddMinutes(60);
             }
             foreach(var game in popularGames)
             {

@@ -31,7 +31,7 @@ public class HelperService : IHelperService
     public async Task<User?> GetUserFromEmail(string email)
     {
         List<User> users = await userRepo.GetAllAsync();
-        
+        if(users.Count == 0) return null;
         return users.SingleOrDefault(x => x.Email.ToLower() == email.ToLower());
     }
 }
