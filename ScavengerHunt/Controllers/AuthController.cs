@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace ScavengerHunt.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [ApiController]
 public class AuthController : ControllerBase
 {
@@ -28,8 +28,7 @@ public class AuthController : ControllerBase
     }
 
     //POST: /auth/register
-    [AllowAnonymous]
-    [HttpPost("register")]
+    [AllowAnonymous, HttpPost("register")]
     public async Task<ActionResult> Register([FromBody] RegisterDto request)
     {
         if (await helpService.GetUserFromEmail(request.Email) != null)
@@ -70,7 +69,8 @@ public class AuthController : ControllerBase
         }
         catch(Exception e)
         {
-            return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message}));
+            logger.LogError(e.Message);
+            return StatusCode(502,new CustomError("Server Error", 502, new string[]{"Something went wrong on our side. Please try again."}));
         }
 
         return Ok(new AuthResponseDto
@@ -81,8 +81,7 @@ public class AuthController : ControllerBase
     }
 
     //POST: /auth/login
-    [AllowAnonymous]
-    [HttpPost("login")]
+    [AllowAnonymous, HttpPost("login")]
     public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto request)
     {
         var user = await helpService.GetUserFromEmail(request.Email);
@@ -114,7 +113,8 @@ public class AuthController : ControllerBase
         }
         catch(Exception e)
         {
-            return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message}));
+            logger.LogError(e.Message);
+            return StatusCode(502,new CustomError("Server Error", 502, new string[]{"Something went wrong on our side. Please try again."}));
         }
 
         return Ok(new AuthResponseDto
@@ -125,8 +125,7 @@ public class AuthController : ControllerBase
     }
 
     //POST /auth/refreshtoken
-    [HttpPost]
-    [Route("refreshtoken")]
+    [AllowAnonymous, HttpPost("refreshtoken")]
     public async Task<IActionResult> Refresh(AuthResponseDto tokenApiModel)
     {
         string accessToken = tokenApiModel.AccessToken;
@@ -141,14 +140,22 @@ public class AuthController : ControllerBase
             user = await userRepo.GetAsync(result);
         }
         if (user is null || user.RefToken != refreshToken || user.RefTokenExpiry <= DateTime.Now)
-            return BadRequest(
-                new CustomError("Token Error", 400, new string[]{"Invalid client request"})
-            );
+            return BadRequest(new CustomError("Session Expired", 400, new string[]{"Session expired. Please login again."})
+        );
         
         var newAccessToken = tokenService.GenerateAccessToken(principal.Claims);
         var newRefreshToken = tokenService.GenerateRefreshToken();
         user.RefToken = newRefreshToken;
-        await userRepo.SaveChangesAsync();
+        user.RefTokenExpiry = DateTime.Now.AddDays(7);
+        try
+        {
+            await userRepo.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e.Message);
+            return StatusCode(502,new CustomError("Server Error", 502, new string[]{"Something went wrong on our side. Please try again."}));
+        }
         return Ok(new AuthResponseDto()
         {
             AccessToken = newAccessToken,
@@ -157,22 +164,18 @@ public class AuthController : ControllerBase
     }
 
     //POST /auth/revoketoken
-    [HttpPost, Authorize]
-    [Route("revoketoken")]
+    [HttpPost("revoketoken"), Authorize]
     public async Task<IActionResult> Revoke()
     {
         var user = await helpService.GetCurrentUser(HttpContext);
-        if (user == null) return NotFound(
-            new CustomError("Login Error", 404, new string[]{"The User doesn't exist"})
-        );
+        if (user == null) return Ok();
         user.RefToken = null;
         await userRepo.SaveChangesAsync();
-        return NoContent();
+        return Ok();
     }
 
     //PUT: /auth/resetpassword
-    [Authorize]
-    [HttpPut("resetpassword")]
+    [Authorize, HttpPut("resetpassword")]
     public async Task<ActionResult> ResetPassword(LoginDto res)
     {
         var user = await helpService.GetCurrentUser(HttpContext);
@@ -185,65 +188,6 @@ public class AuthController : ControllerBase
 
         user.PasswordHash = passwordHash;
         user.PasswordSalt = salt;
-
-        try
-        {
-            userRepo.UpdateAsync(user);
-            await userRepo.SaveChangesAsync();
-        }
-        catch (Exception e)
-        {
-            logger.LogInformation("Possible Database Error", e);
-            return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message, "Visit https://sh.jerishbovas.com/help"}));
-        }
-
-        return Ok();
-    }
-
-    [Authorize]
-    [HttpPut("AddImage")]
-    public async Task<ActionResult> AddImage([FromForm] FileModel file)
-    {
-        if(file.ImageFile == null) return BadRequest();
-
-        var user = await helpService.GetCurrentUser(HttpContext);
-        if (user == null)
-        {
-            return NotFound(
-                new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
-        }
-
-        try
-        {
-            string url = await blobService.SaveImage("profile", file.ImageFile, user.id.ToString());
-            blobService.DeleteImage("profile", user.ProfileImage);
-            user.ProfileImage = url;
-            userRepo.UpdateAsync(user);
-            await userRepo.SaveChangesAsync();
-            return Created(url, new {ImagePath = user.ProfileImage});
-        }
-        catch (Exception e)
-        {
-            logger.LogInformation("Possible Storage Error", e);
-            return StatusCode(502,new CustomError("Bad Gateway Error", 502, new string[]{e.Message, "Visit https://sh.jerishbovas.com/help"}));
-        }
-    }
-
-    //PUT: /auth/changename
-    [Authorize]
-    [HttpPut("changename")]
-    public async Task<ActionResult> ChangeName(RegisterDto res)
-    {
-        var user = await helpService.GetCurrentUser(HttpContext);
-        if (user == null)
-        {
-            return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
-        }
-
-        if (VerifyPassword(res.Password, user.PasswordHash, user.PasswordSalt))
-        {
-            user.Name = res.Name;
-        }
 
         try
         {

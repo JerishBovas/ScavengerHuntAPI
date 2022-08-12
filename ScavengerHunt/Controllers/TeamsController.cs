@@ -6,17 +6,17 @@ using ScavengerHunt.Services;
 
 namespace ScavengerHunt.Controllers
 {
-    [Route("api/team")]
+    [Route("api/v1/[controller]")]
     [ApiController]
-    public class TeamController : ControllerBase
+    public class TeamsController : ControllerBase
     {
         private readonly ITeamService teamRepo;
         private readonly IUserService userRepo;
-        private readonly ILogger<TeamController> logger;
+        private readonly ILogger<TeamsController> logger;
         private readonly IHelperService helpService;
         private readonly IBlobService blobService;
 
-        public TeamController(ITeamService teamRepo, IUserService userRepo, ILogger<TeamController> logger, IHelperService help, IBlobService blob)
+        public TeamsController(ITeamService teamRepo, IUserService userRepo, ILogger<TeamsController> logger, IHelperService help, IBlobService blob)
         {
             this.teamRepo = teamRepo;
             this.userRepo = userRepo;
@@ -30,10 +30,9 @@ namespace ScavengerHunt.Controllers
         [HttpGet]
         public async Task<ActionResult<List<TeamDto>>> Get()
         {
-            List<Team> Teams;
             List<TeamDto> TeamsDto = new();
 
-            Teams = await teamRepo.GetAllAsync();
+            var Teams = await teamRepo.GetAllAsync();
 
             if (!Teams.Any())
             {
@@ -63,29 +62,32 @@ namespace ScavengerHunt.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<TeamDetailDto>> Get(Guid id)
         {
-            TeamDetailDto dto;
-            Team? team;
-            List<ScoreLogDto> scoreLog = new();
+            List<GameScoreDto> scoreLog = new();
 
-            team = await teamRepo.GetByIdAsync(id);
+            var team = await teamRepo.GetByIdAsync(id);
             if (team == null){ return NotFound("Team doesn't exist");}
 
             if (team.PastWinners.Any())
             {
                 foreach (var item in team.PastWinners)
                 {
-                    ScoreLogDto scoreLogDto = new()
+                    GameScoreDto scoreLogDto = new()
                     {
+                        id = item.id,
+                        GameId = item.GameId,
                         GameName = item.GameName,
-                        DatePlayed = item.DatePlayed,
-                        Score = item.Score
+                        NoOfItems = item.NoOfItems,
+                        ItemsFound = item.ItemsFound,
+                        Score = item.Score,
+                        StartTime = item.StartTime,
+                        EndTime = item.EndTime
 
                     };
                     scoreLog.Add(scoreLogDto);
                 }
             }
 
-            dto = new()
+            TeamDetailDto dto = new()
             {
                 Id = team.id,
                 IsOpen = team.IsOpen,
@@ -103,13 +105,11 @@ namespace ScavengerHunt.Controllers
         [HttpPost]
         public async Task<ActionResult> Create([FromBody] TeamCreateDto res)
         {
-            Team newgrp;
-
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return NotFound("User not found"); }
 
-            newgrp = new()
+            Team newgrp = new()
             {
                 IsOpen = res.IsOpen,
                 Title = res.Title,
@@ -117,7 +117,7 @@ namespace ScavengerHunt.Controllers
                 TeamIcon = res.TeamIcon,
                 CreatedUserId = user.id,
                 Members = new List<Guid> { user.id},
-                PastWinners = new List<ScoreLog>(),
+                PastWinners = new List<GameScore>(),
             };
 
             try
@@ -138,8 +138,6 @@ namespace ScavengerHunt.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(Guid id, [FromBody] TeamCreateDto res)
         {
-            Team newgrp;
-
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return Unauthorized("User not found"); }
@@ -147,7 +145,7 @@ namespace ScavengerHunt.Controllers
             var grp = await teamRepo.GetAsync(id, user.id);
             if (grp == null){return NotFound("Team doesn't exist");}
 
-            newgrp = grp with
+            Team newgrp = grp with
             {
                 IsOpen = res.IsOpen,
                 Title = res.Title,
@@ -169,7 +167,7 @@ namespace ScavengerHunt.Controllers
         }
 
         [Authorize]
-        [HttpPut("UploadImage")]
+        [HttpPut("image")]
         public async Task<ActionResult> UploadImage([FromForm] FileModel file)
         {
             if(file.ImageFile == null) return BadRequest();

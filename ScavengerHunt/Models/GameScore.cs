@@ -1,23 +1,16 @@
 ﻿namespace ScavengerHunt.Models
 {
-    public record ScoreLog
+    public record GameScore
     {
-        public DateTimeOffset DatePlayed { get; set; }
-        public string GameName { get; set; }
-        public int Score { get; set; }
-
-        public ScoreLog(string gameName, int score)
-        {
-            DatePlayed = DateTimeOffset.UtcNow;
-            GameName = gameName;
-            Score = score;
-        }
-
-        public ScoreLog(DateTimeOffset datePlayed, string gameName, int score)
-        {
-            DatePlayed = datePlayed;
-            GameName = gameName;
-            Score = score;
-        }
+        public Guid id { get; set; } = Guid.NewGuid();
+        public bool GameEnded { get; set; } = false;
+        public Guid GameId { get; set; }
+        public string GameName { get; set; } = "";
+        public int NoOfItems { get; set; }
+        public int ItemsFound { get; set; }
+        public int Score { get; set; } = 0;
+        public DateTimeOffset StartTime { get; set; }
+        public DateTimeOffset ExpiryTime { get; set; }
+        public DateTimeOffset? EndTime { get; set; }
     }
 }

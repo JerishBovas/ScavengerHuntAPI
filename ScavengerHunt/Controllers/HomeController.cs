@@ -6,7 +6,7 @@ using ScavengerHunt.Services;
 
 namespace ScavengerHunt.Controllers
 {
-    [Route("api/home")]
+    [Route("")]
     [ApiController]
     public class HomeController : ControllerBase
     {
@@ -15,72 +15,26 @@ namespace ScavengerHunt.Controllers
         private readonly ILogger<HomeController> logger;
         private readonly IHelperService helpService;
         private readonly IBlobService blobService;
+        private IHostEnvironment _hostingEnvironment;
+        private IConfiguration configuration;
         private static List<User> leaderboard = new();
         private static DateTime? leaderboardExpiry = null;
         private static List<Game> popularGames = new();
         private static DateTime? popularGamesExpiry = null;
 
-        public HomeController(IUserService user, ILogger<HomeController> logger, IHelperService help, IBlobService blob, IGameService gameService)
+        public HomeController(IUserService user, ILogger<HomeController> logger, IHelperService help, IBlobService blob, IGameService gameService, IHostEnvironment hostingEnvironment, IConfiguration configuration)
         {
             userRepo = user;
             this.logger = logger;
             helpService = help;
             blobService = blob;
             this.gameService = gameService;
+            this._hostingEnvironment = hostingEnvironment;
+            this.configuration = configuration;
         }
 
-        //GET /home
-        [Authorize, HttpGet]
-        public async Task<ActionResult<UserDto>> GetUser()
-        {
-            User? user;
-            UserDto userdt;
-
-            user = await helpService.GetCurrentUser(HttpContext);
-            if (user is null){return NotFound("User does not exist");}
-
-            userdt = new()
-            {
-                Id = user.id,
-                Name = user.Name,
-                Email = user.Email,
-                ProfileImage = user.ProfileImage,
-                UserLog = new UserLogDto()
-                {
-                    UserScore = user.UserLog.UserScore,
-                    LastUpdated = user.UserLog.LastUpdated,
-                }
-            };
-
-            return userdt;
-        }
-
-        //GET /home/userlog
-        [Authorize, HttpGet("scores")]
-        public async Task<ActionResult<List<ScoreLogDto>>> GetScoreLog()
-        {
-            User? user;
-            List<ScoreLogDto> scoreloglist = new();
-
-            user = await helpService.GetCurrentUser(HttpContext);
-            if (user is null){return NotFound("User does not exist");}
-
-            foreach(var scorelog in user.UserLog.ScoreLog)
-            {
-                ScoreLogDto newdt = new()
-                {
-                    DatePlayed = scorelog.DatePlayed,
-                    GameName = scorelog.GameName,
-                    Score = scorelog.Score,
-                };
-                scoreloglist.Add(newdt);
-            }
-
-            return scoreloglist;
-        }
-    
-        //Get /home/leaderboard
-        [AllowAnonymous, HttpGet("leaderboard")]
+        //Get /leaderboard
+        [AllowAnonymous, HttpGet("api/v1/Home/leaderboard")]
         public async Task<ActionResult> GetLeaderBoard()
         {
             List<UserDto> leaderBoardList = new();
@@ -109,8 +63,8 @@ namespace ScavengerHunt.Controllers
             return Ok(leaderBoardList);
         }
     
-        //Get /home/populargames
-        [AllowAnonymous, HttpGet("PopularGames")]
+        //Get /populargames
+        [AllowAnonymous, HttpGet("api/v1/Home/PopularGames")]
         public async Task<ActionResult> GetPopularGames()
         {
             List<GameDto> popularGamesList = new();
@@ -145,6 +99,16 @@ namespace ScavengerHunt.Controllers
             return Ok(popularGamesList);
         }
 
+        //GET: /.well-known/apple-app-site-association
+        [AllowAnonymous, HttpGet(".well-known/apple-app-site-association")]
+        public async Task<IActionResult> Index()
+        {
+            return Content(
+                await System.IO.File.ReadAllTextAsync(Path.Combine(_hostingEnvironment.ContentRootPath, configuration["AppleSitePath"])),
+                "text/plain"
+            );
+        }
+
         private async Task updateLeaderboard()
         {
             List<User> users = await userRepo.GetAllAsync();
@@ -154,6 +118,7 @@ namespace ScavengerHunt.Controllers
 
             leaderboard = users.Take(5).ToList();
         }
+
         private async Task updatePopularGames()
         {
             List<Game> games = await gameService.GetAllAsync();

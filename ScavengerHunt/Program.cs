@@ -5,6 +5,7 @@ using Microsoft.Extensions.Azure;
 using Microsoft.IdentityModel.Tokens;
 using ScavengerHunt.Data;
 using ScavengerHunt.DTOs;
+using ScavengerHunt.Hubs;
 using ScavengerHunt.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,7 @@ builder.Services.AddAzureClients(options =>
     options.AddBlobServiceClient(builder.Configuration.GetConnectionString("ScavengerHunt_Storage"));
 });
 builder.Services.AddHttpClient();
+builder.Services.AddSignalR();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
@@ -40,7 +42,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
         };
-
     });
 builder.Services.AddMvc()
         .ConfigureApiBehaviorOptions(options =>
@@ -77,5 +78,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<PlayHub>("/Play");
 
 app.Run();

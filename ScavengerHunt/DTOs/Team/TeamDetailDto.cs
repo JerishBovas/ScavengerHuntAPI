@@ -9,7 +9,7 @@ namespace ScavengerHunt.DTOs
         public string Description { get; init; }
         public string TeamIcon { get; set; }
         public ICollection<Guid> Members { get; init; }
-        public ICollection<ScoreLogDto> PastWinners { get; init; }
+        public ICollection<GameScoreDto> PastWinners { get; init; }
     }
 }
 

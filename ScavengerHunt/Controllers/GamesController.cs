@@ -6,17 +6,17 @@ using ScavengerHunt.Services;
 
 namespace ScavengerHunt.Controllers
 {
-    [Route("api/game")]
+    [Route("api/v1/[controller]")]
     [ApiController]
-    public class GameController : ControllerBase
+    public class GamesController : ControllerBase
     {
         private readonly IGameService gameRepo;
         private readonly IUserService userRepo;
-        private readonly ILogger<GameController> logger;
+        private readonly ILogger<GamesController> logger;
         private readonly IHelperService helpService;
         private readonly IBlobService blobService;
 
-        public GameController(IGameService gameRepo, IUserService userRepo, ILogger<GameController> logger, IHelperService help, IBlobService blob)
+        public GamesController(IGameService gameRepo, IUserService userRepo, ILogger<GamesController> logger, IHelperService help, IBlobService blob)
         {
             this.gameRepo = gameRepo;
             this.userRepo = userRepo;
@@ -201,7 +201,7 @@ namespace ScavengerHunt.Controllers
         }
 
         [Authorize]
-        [HttpPut("UploadImage")]
+        [HttpPut("image")]
         public async Task<ActionResult> UploadImage([FromForm] FileModel file)
         {
             if(file.ImageFile == null) return BadRequest();
@@ -249,7 +249,7 @@ namespace ScavengerHunt.Controllers
         }
     
         // POST api/Game
-        [Authorize, HttpPost("{id}")]
+        [Authorize, HttpPost("{id}/items")]
         public async Task<ActionResult> CreateItem(Guid id, [FromBody] ItemCreateDto res)
         {
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
@@ -280,8 +280,8 @@ namespace ScavengerHunt.Controllers
         }
 
         // PUT api/Game/5
-        [Authorize, HttpPut("{id}/{itemId}")]
-        public async Task<ActionResult> UpdateItem(Guid id, Guid itemId, [FromBody] GameCreateDto res)
+        [Authorize, HttpPut("{id}/items/{itemId}")]
+        public async Task<ActionResult> UpdateItem(Guid id, Guid itemId, [FromBody] ItemCreateDto res)
         {
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
             var user = await helpService.GetCurrentUser(HttpContext);
@@ -311,7 +311,7 @@ namespace ScavengerHunt.Controllers
 
         // DELETE api/Game/5
         [Authorize]
-        [HttpDelete("{id}/{itemId}")]
+        [HttpDelete("{id}/items/{itemId}")]
         public async Task<ActionResult> DeleteItem(Guid id, Guid itemId)
         {
             var user = await helpService.GetCurrentUser(HttpContext);

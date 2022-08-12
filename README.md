@@ -11,44 +11,57 @@ These are the available API endpoints at the time of writing. More coming in the
 
 | Endpoint                           | Description                         |
 | ---------------------------------- | ----------------------------------- |
-| https://scavengerhuntapi.azurewebsites.net/api/auth/register [POST] | User Registration |
-| https://scavengerhuntapi.azurewebsites.net/api/auth/login [POST] | User Authentication |
-| https://scavengerhuntapi.azurewebsites.net/api/auth/refreshtoken [POST] | Refreshes JWT Token |
-| https://scavengerhuntapi.azurewebsites.net/api/auth/revoketoken [POST] | Revokes JWT Token |
-| https://scavengerhuntapi.azurewebsites.net/api/auth/resetpassword [POST] | Reset user password |
-| https://scavengerhuntapi.azurewebsites.net/api/auth/changename [PUT] | Change user's name |
-| https://scavengerhuntapi.azurewebsites.net/api/auth/addimage [PUT] | Adds user profile image |
+| /api/v1/auth/register [POST] | User Registration |
+| /api/v1/auth/login [POST] | User Authentication |
+| /api/v1/auth/refreshtoken [POST] | Refreshes JWT Token |
+| /api/v1/auth/revoketoken* [POST] | Revokes JWT Token |
+| /api/v1/auth/resetpassword* [POST] | Reset user password |
+
+### Accounts Controller
+
+| Endpoint                           | Description                         |
+| ---------------------------------- | ----------------------------------- |
+| /api/v1/accounts/all* [GET] | Get all users info |
+| /api/v1/accounts/* [GET] | Gets user info |
+| /api/v1/accounts/scores* [GET] | Gets the scores of user |
+| /api/v1/accounts/profileimage/* [PUT] | Uploads given image to server |
+| /api/v1/accounts/name* [PUT] | Change user's name |
+| /api/v1/accounts/{id}* [DELETE] | Delete user account |
 
 ### Home Controller
 
 | Endpoint                           | Description                         |
 | ---------------------------------- | ----------------------------------- |
-| https://scavengerhuntapi.azurewebsites.net/api/home/ [GET] | Gets user info |
-| https://scavengerhuntapi.azurewebsites.net/api/home/scores/ [GET] | Gets the score of user |
-| https://scavengerhuntapi.azurewebsites.net/api/home/uploadimage/ [PUT] | Uploads given image to server |
+| /api/v1/.well-known/apple-app-site-association [GET] | Apple site association file |
+| /api/v1/Home/leaderboard/ [GET] | Gets Top playes of the game |
+| /api/v1/Home/populargames/ [GET] | Gets popular games in the game |
 
 ### Game Controller
 
 | Endpoint                           | Description                         |
 | ---------------------------------- | ----------------------------------- |
-| https://scavengerhuntapi.azurewebsites.net/api/game/ [GET] | Get the list of Games |
-| https://scavengerhuntapi.azurewebsites.net/api/game/{id} [GET] | Get a Game by ID |
-| https://scavengerhuntapi.azurewebsites.net/api/game/ [POST] | Create Game |
-| https://scavengerhuntapi.azurewebsites.net/api/game/{id} [PUT] | Update Game |
-| https://scavengerhuntapi.azurewebsites.net/api/game/{id} [DELETE] | Delete Game |
-| https://scavengerhuntapi.azurewebsites.net/api/game/{id} [POST] | Create Item |
-| https://scavengerhuntapi.azurewebsites.net/api/game/{id}/{itemId} [PUT] | Update Item |
-| https://scavengerhuntapi.azurewebsites.net/api/game/{id}/{itemId} [DELETE] | Delete Item |
+| /api/v1/game/* [GET] | Get the list of Games |
+| /api/v1/game/{id}* [GET] | Get a Game by ID |
+| /api/v1/game/* [POST] | Create Game |
+| /api/v1/game/{id}* [PUT] | Update Game |
+| /api/v1/game/{id}* [DELETE] | Delete Game |
+| /api/v1/game/{id}* [POST] | Create Item |
+| /api/v1/game/{id}/items/{itemId}* [PUT] | Update Item |
+| /api/v1/game/{id}/items/{itemId}* [DELETE] | Delete Item |
+| /api/v1/game/image* [PUT] | Upload Image |
 
 ### Team Controller
 
 | Endpoint                           | Description                         |
 | ---------------------------------- | ----------------------------------- |
-| https://scavengerhuntapi.azurewebsites.net/api/team/ [GET] | Get the list of Teams |
-| https://scavengerhuntapi.azurewebsites.net/api/team/{id} [GET] | Get a Team by ID |
-| https://scavengerhuntapi.azurewebsites.net/api/team/ [POST] | Create Team |
-| https://scavengerhuntapi.azurewebsites.net/api/team/{id} [PUT] | Update Team |
-| https://scavengerhuntapi.azurewebsites.net/api/team/{id} [DELETE] | Delete Team |
+| /api/v1/team/* [GET] | Get the list of Teams |
+| /api/v1/team/{id}* [GET] | Get a Team by ID |
+| /api/v1/team/* [POST] | Create Team |
+| /api/v1/team/{id}* [PUT] | Update Team |
+| /api/v1/team/{id}* [DELETE] | Delete Team |
+| /api/v1/team/image* [PUT] | Upload Image |
+
+*Needs Authorization
 
 ## Local Development Setup
 
@@ -87,7 +100,7 @@ Sample Data fetch from API using Swift
 func refreshToken(accessToken: String, refreshToken: String) async throws -> TokenObject{
         let body = TokenObject(accessToken: accessToken, refreshToken: refreshToken)
         
-        var request = URLRequest(url: URL(string: "https://scavengerhuntapi.azurewebsites.net/api/auth/refreshtoken")!)
+        var request = URLRequest(url: URL(string: "{domain}/api/v1/refreshtoken")!)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try? JSONEncoder().encode(body)

@@ -1,5 +1,7 @@
-﻿using System.Security.Cryptography;
+﻿using System.Security.Claims;
+using System.Security.Cryptography;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -39,7 +41,7 @@ namespace ScavengerHunt.UnitTests
         }
 
         [Fact]
-        public void Register_WithValidModel_ReturnsRegisteredUser()
+        public void Register_WithValidModel_ReturnsTokenObject()
         {
             //Arrange
             RegisterDto creatItem = new(){
@@ -51,11 +53,14 @@ namespace ScavengerHunt.UnitTests
             //Act
             var result = ac.Register(creatItem);
             //Assert
-            var createdItem = ((CreatedAtActionResult)result.Result).Value;
-            createdItem.Should().BeEquivalentTo
+            result.Result.Should().BeOfType<OkObjectResult>();
+            ((OkObjectResult) result.Result).Value.Should().BeEquivalentTo
             (
-                creatItem,
-                options => options.ComparingByMembers<RegisterDto>().ExcludingMissingMembers()
+                new AuthResponseDto()
+                {
+                    AccessToken = It.IsAny<string>(),
+                    RefreshToken = It.IsAny<string>()
+                }
             );
         }
 
@@ -97,7 +102,7 @@ namespace ScavengerHunt.UnitTests
         }
 
         [Fact]
-        public void Login_WithDatabaseError_ReturnsBadGatewayError()
+        public void Login_WithValidDetails_ReturnsTokenObject()
         {
             //Arrange
             LoginDto loginItem = new()
@@ -122,14 +127,233 @@ namespace ScavengerHunt.UnitTests
                 CreatedDate = DateTimeOffset.UtcNow
             };
             helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(user);
-            userRepo.Setup(X => X.SaveChangesAsync()).ThrowsAsync(new SystemException());
             AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
 
             //Act
             var result = ac.Login(loginItem).Result;
 
             //Assert
-            result.Result.Should().BeOfType<ObjectResult>();
+            result.Result.Should().BeOfType<OkObjectResult>();
+            result.Value.Should().BeEquivalentTo
+            (
+                new AuthResponseDto()
+                {
+                    AccessToken = It.IsAny<string>(),
+                    RefreshToken = It.IsAny<string>()
+                }
+            );
+        }
+
+        [Fact]
+        public void Refresh_WithUserNull_ReturnsBadRequest()
+        {
+            //Arrange
+            AuthResponseDto authRes = new()
+            {
+                AccessToken = Guid.NewGuid().ToString(),
+                RefreshToken = Guid.NewGuid().ToString()
+            };
+            
+            var claims = new List<Claim>() 
+            { 
+                new Claim(ClaimTypes.Name, "username"),
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuthType");
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+
+            tokenService.Setup(x => x.GetPrincipalFromExpiredToken(authRes.AccessToken)).Returns(claimsPrincipal);
+            userRepo.Setup(x => x.GetAsync(Guid.NewGuid())).ReturnsAsync((User?)null);
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
+
+            //Act
+            var result = ac.Refresh(authRes);
+
+            //Assert
+            result.Result.Should().BeOfType<BadRequestObjectResult>();
+            ((BadRequestObjectResult) result.Result).Value.Should().BeEquivalentTo
+            (
+                new CustomError("Session Expired", 400, new string[]{"Session expired. Please login again."})
+            );
+        }
+
+        [Fact]
+        public void Refresh_WithInvalidRefreshToken_ReturnsBadRequest()
+        {
+            //Arrange
+            AuthResponseDto authRes = new()
+            {
+                AccessToken = Guid.NewGuid().ToString(),
+                RefreshToken = Guid.NewGuid().ToString()
+            };
+            User testUser = new()
+            {
+                id = Guid.NewGuid(),
+                Name = Guid.NewGuid().ToString(),
+                Email = Guid.NewGuid().ToString(),
+                Role = "User",
+                ProfileImage = "",
+                PasswordHash = Guid.NewGuid().ToString(),
+                PasswordSalt = Guid.NewGuid().ToString(),
+                RefToken = Guid.NewGuid().ToString(),
+                RefTokenExpiry = DateTime.Now.AddHours(1),
+                UserLog = new UserLog(),
+                Games = new List<Guid>(),
+                Teams = new List<Guid>(),
+                CreatedDate = DateTimeOffset.UtcNow
+            };
+            
+            var claims = new List<Claim>() 
+            { 
+                new Claim(ClaimTypes.Name, "username"),
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuthType");
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+
+            tokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns(claimsPrincipal);
+            userRepo.Setup(x => x.GetAsync(It.IsAny<Guid>())).ReturnsAsync(testUser);
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
+
+            //Act
+            var result = ac.Refresh(authRes);
+
+            //Assert
+            result.Result.Should().BeOfType<BadRequestObjectResult>();
+            ((BadRequestObjectResult) result.Result).Value.Should().BeEquivalentTo
+            (
+                new CustomError("Session Expired", 400, new string[]{"Session expired. Please login again."})
+            );
+        }
+
+        [Fact]
+        public void Refresh_WithRefreshTokenExpired_ReturnsBadRequest()
+        {
+            //Arrange
+            AuthResponseDto authRes = new()
+            {
+                AccessToken = Guid.NewGuid().ToString(),
+                RefreshToken = Guid.NewGuid().ToString()
+            };
+            User testUser = new()
+            {
+                id = Guid.NewGuid(),
+                Name = Guid.NewGuid().ToString(),
+                Email = Guid.NewGuid().ToString(),
+                Role = "User",
+                ProfileImage = "",
+                PasswordHash = Guid.NewGuid().ToString(),
+                PasswordSalt = Guid.NewGuid().ToString(),
+                RefToken = authRes.RefreshToken,
+                RefTokenExpiry = DateTime.Now,
+                UserLog = new UserLog(),
+                Games = new List<Guid>(),
+                Teams = new List<Guid>(),
+                CreatedDate = DateTimeOffset.UtcNow
+            };
+            
+            var claims = new List<Claim>() 
+            { 
+                new Claim(ClaimTypes.Name, "username"),
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuthType");
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+
+            tokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns(claimsPrincipal);
+            userRepo.Setup(x => x.GetAsync(It.IsAny<Guid>())).ReturnsAsync(testUser);
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
+
+            //Act
+            var result = ac.Refresh(authRes);
+
+            //Assert
+            result.Result.Should().BeOfType<BadRequestObjectResult>();
+            ((BadRequestObjectResult) result.Result).Value.Should().BeEquivalentTo
+            (
+                new CustomError("Session Expired", 400, new string[]{"Session expired. Please login again."})
+            );
+        }
+
+        [Fact]
+        public void Refresh_WithValid_ReturnsOkObjectResult()
+        {
+            //Arrange
+            AuthResponseDto authRes = new()
+            {
+                AccessToken = Guid.NewGuid().ToString(),
+                RefreshToken = Guid.NewGuid().ToString()
+            };
+            User testUser = new()
+            {
+                id = Guid.NewGuid(),
+                Name = Guid.NewGuid().ToString(),
+                Email = Guid.NewGuid().ToString(),
+                Role = "User",
+                ProfileImage = "",
+                PasswordHash = Guid.NewGuid().ToString(),
+                PasswordSalt = Guid.NewGuid().ToString(),
+                RefToken = authRes.RefreshToken,
+                RefTokenExpiry = DateTime.Now.AddHours(1),
+                UserLog = new UserLog(),
+                Games = new List<Guid>(),
+                Teams = new List<Guid>(),
+                CreatedDate = DateTimeOffset.UtcNow
+            };
+            
+            var claims = new List<Claim>() 
+            { 
+                new Claim(ClaimTypes.Name, "username"),
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuthType");
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+
+            tokenService.Setup(x => x.GetPrincipalFromExpiredToken(It.IsAny<string>())).Returns(claimsPrincipal);
+            userRepo.Setup(x => x.GetAsync(It.IsAny<Guid>())).ReturnsAsync(testUser);
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
+
+            //Act
+            var result = ac.Refresh(authRes);
+
+            //Assert
+            result.Result.Should().BeOfType<OkObjectResult>();
+            ((OkObjectResult) result.Result).Value.Should().BeEquivalentTo
+            (
+                new AuthResponseDto()
+                {
+                    AccessToken = It.IsAny<string>(),
+                    RefreshToken = It.IsAny<string>()
+                }
+            );
+        }
+
+        [Fact]
+        public void Revoke_WithUserNull_ReturnsLoginError()
+        {
+            //Arrange
+            helpMethod.Setup(x => x.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync((User?)null);
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
+
+            //Act
+            var result = ac.Revoke();
+
+            //Assert
+            result.Result.Should().BeOfType<OkResult>();
+        }
+
+        [Fact]
+        public void Revoke_WithValidUser_ReturnsLoginError()
+        {
+            //Arrange
+            helpMethod.Setup(x => x.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync(new User());
+            AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
+
+            //Act
+            var result = ac.Revoke();
+
+            //Assert
+            result.Result.Should().BeOfType<OkResult>();
         }
 
         private static void CreatePassword(string password, out string passwordHash, out string passwordSalt)

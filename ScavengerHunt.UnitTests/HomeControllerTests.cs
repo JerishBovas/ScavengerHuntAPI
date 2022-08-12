@@ -82,11 +82,11 @@ public class HomeControllerTests
 		var result = await hc.GetScoreLog();
 
 		//Assert
-		result.Should().BeOfType<ActionResult<List<ScoreLogDto>>>();
+		result.Should().BeOfType<ActionResult<List<GameScoreDto>>>();
 		result.Value.Should().BeEquivalentTo
 		(
 			expectedUser.UserLog.ScoreLog,
-			options => options.ComparingByMembers<ScoreLog>()
+			options => options.ComparingByMembers<GameScore>()
 		);
 	}
 
@@ -104,14 +104,14 @@ public class HomeControllerTests
 			{
 				UserScore = 0,
 				LastUpdated = DateTimeOffset.UtcNow,
-				ScoreLog = new List<ScoreLog>()
+				ScoreLog = new List<GameScore>()
 			},
             Games = new HashSet<Guid>(),
             Teams = new HashSet<Guid>(),
             CreatedDate = DateTimeOffset.UtcNow
 		};
 	}
-	private ScoreLog CreateRandomScoreLog()
+	private GameScore CreateRandomScoreLog()
 	{
 		return new(
 			DateTimeOffset.UtcNow,

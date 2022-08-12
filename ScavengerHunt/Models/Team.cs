@@ -11,6 +11,6 @@ namespace ScavengerHunt.Models
         public string TeamIcon { get; set; } = "";
         public Guid CreatedUserId { get; set; }
         public ICollection<Guid> Members { get; set; } = new List<Guid>();
-        public ICollection<ScoreLog> PastWinners { get; set; } = new List<ScoreLog>();
+        public ICollection<GameScore> PastWinners { get; set; } = new List<GameScore>();
     }
 }
