@@ -1,3 +1,4 @@
+[![Board Status](https://dev.azure.com/jerishbradly/fddaff55-5e94-4817-8877-88651d01f1bd/38ff28cf-96d3-4f2a-a393-fbbb7d60f42a/_apis/work/boardbadge/319b45bf-9eb3-4a28-a0e1-b8fcaf67abe5)](https://dev.azure.com/jerishbradly/fddaff55-5e94-4817-8877-88651d01f1bd/_boards/board/t/38ff28cf-96d3-4f2a-a393-fbbb7d60f42a/Microsoft.RequirementCategory)
 # Scavenger Hunt API
 ![GitHubAction workflow](https://github.com/JerishBovas/ScavengerHuntAPI/actions/workflows/master_scavengerhuntapitest.yml/badge.svg)
 
