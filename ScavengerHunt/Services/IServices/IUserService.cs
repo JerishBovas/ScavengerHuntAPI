@@ -8,7 +8,7 @@ namespace ScavengerHunt.Services
         Task<List<User>> GetAllAsync();
         Task CreateAsync(User entity);
         void UpdateAsync(User entity);
-        void DeleteAsync(Guid id);
+        void DeleteAsync(User entity);
         Task SaveChangesAsync();
     }
 }

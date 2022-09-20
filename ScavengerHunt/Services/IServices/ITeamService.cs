@@ -9,7 +9,7 @@ namespace ScavengerHunt.Services
         Task<List<Team>> GetAllAsync();
         Task CreateAsync(Team entity);
         void UpdateAsync(Team entity);
-        void DeleteAsync(Guid id, Guid teamId);
+        void DeleteAsync(Team entity);
         Task SaveChangesAsync();
     }
 }

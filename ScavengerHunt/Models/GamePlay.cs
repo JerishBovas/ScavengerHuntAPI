@@ -1,10 +1,14 @@
-﻿namespace ScavengerHunt.Models
+﻿// It is the score object thats created when each play starts playing a game
+// Then name can be confusing but it is what it is
+// It holds valuable data about the game like start time endtime
+namespace ScavengerHunt.Models
 {
-    public record GameScore
+    public record GamePlay
     {
-        public Guid id { get; set; } = Guid.NewGuid();
+        public Guid Id { get; set; } = Guid.NewGuid();
         public bool GameEnded { get; set; } = false;
         public Guid GameId { get; set; }
+        public Guid UserId { get; set; }
         public string GameName { get; set; } = "";
         public int NoOfItems { get; set; }
         public int ItemsFound { get; set; }

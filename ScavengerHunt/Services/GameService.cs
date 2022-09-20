@@ -12,7 +12,6 @@ namespace ScavengerHunt.Services
         public GameService(ScavengerHuntContext context)
         {
             this.context = context;
-            this.context.Database.EnsureCreatedAsync();
             dbSet = this.context.Set<Game>();
         }
 
@@ -28,7 +27,7 @@ namespace ScavengerHunt.Services
 
         public async Task<Game?> GetByIdAsync(Guid id)
         {
-            return await dbSet.FirstOrDefaultAsync(x => x.id == id);
+            return await dbSet.FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task CreateAsync(Game entity)
@@ -41,13 +40,9 @@ namespace ScavengerHunt.Services
             dbSet.Update(entity);
         }
 
-        public async void DeleteAsync(Guid id, Guid gameId)
+        public void DeleteAsync(Game entity)
         {
-            Game? entity = await GetAsync(id, gameId);
-            if (entity != null)
-            {
-                dbSet.Remove(entity);
-            }
+            dbSet.Remove(entity);
         }
 
         public async Task SaveChangesAsync()

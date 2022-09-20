@@ -1,9 +1,15 @@
-﻿namespace ScavengerHunt.Models
+﻿using Newtonsoft.Json;
+
+namespace ScavengerHunt.Models
 {
+    // This Object holds the data about each games
+    // Every users can see other user's games as long as its public
+    // Only owner can edit the game.
     public record Game
     {
-        public Guid id { get; set; } = Guid.NewGuid();
+        public Guid Id { get; set; } = Guid.NewGuid();
         public bool IsPrivate { get; set; }
+        public bool isActive { get; set; }
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
         public string Address { get; set; } = "";

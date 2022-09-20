@@ -4,43 +4,43 @@ using ScavengerHunt.Models;
 
 namespace ScavengerHunt.Services
 {
-    public class TeamService : ITeamService
+    public class ItemService : IItemService
     {
         private readonly ScavengerHuntContext context;
-        private readonly DbSet<Team> dbSet;
+        private readonly DbSet<Item> dbSet;
 
-        public TeamService(ScavengerHuntContext context)
+        public ItemService(ScavengerHuntContext context)
         {
             this.context = context;
-            dbSet = this.context.Set<Team>();
+            dbSet = this.context.Set<Item>();
         }
 
-        public async Task<List<Team>> GetAllAsync()
+        public async Task<List<Item>> GetAllAsync()
         {
             return await dbSet.ToListAsync();
         }
 
-        public async Task<Team?> GetAsync(Guid id, Guid teamId)
+        public async Task<Item?> GetAsync(Guid gameId, Guid itemId)
         {
-            return await dbSet.FindAsync(id, teamId);
+            return await dbSet.FindAsync(gameId, itemId);
         }
 
-        public async Task<Team?> GetByIdAsync(Guid id)
+        public async Task<Item?> GetByIdAsync(Guid id)
         {
             return await dbSet.FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public async Task CreateAsync(Team entity)
+        public async Task CreateAsync(Item entity)
         {
             await dbSet.AddAsync(entity);
         }
 
-        public void UpdateAsync(Team entity)
+        public void UpdateAsync(Item entity)
         {
             dbSet.Update(entity);
         }
 
-        public void DeleteAsync(Team entity)
+        public void DeleteAsync(Item entity)
         {
             dbSet.Remove(entity);
         }

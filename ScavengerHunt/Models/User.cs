@@ -1,19 +1,15 @@
-﻿namespace ScavengerHunt.Models
+﻿// This model holds the users datas
+// Its created alongside the account object
+namespace ScavengerHunt.Models
 {
-    public record User
+    public class User
     {
-        public Guid id { get; set; } = Guid.NewGuid();
+        public Guid Id { get; set; }
         public string Name { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Role { get; set; } = "";
         public string ProfileImage { get; set; } = "";
-        public string PasswordHash { get; set; } = "";
-        public string PasswordSalt { get; set; } = "";
-        public string? RefToken { get; set; }
-        public DateTime? RefTokenExpiry { get; set; }
-        public UserLog UserLog { get; set; } = new UserLog();
-        public ICollection<Guid> Games { get; set; } = new List<Guid>();
-        public ICollection<Guid> Teams { get; set; } = new List<Guid>();
-        public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
+        public int Score { get; set; }
+        public int Games { get; set; }
+        public int Teams { get; set; }
+        public DateTimeOffset LastUpdated { get; set; }
     }
 }

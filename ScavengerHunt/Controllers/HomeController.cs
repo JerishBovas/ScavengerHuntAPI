@@ -13,23 +13,19 @@ namespace ScavengerHunt.Controllers
         private readonly IUserService userRepo;
         private readonly IGameService gameService;
         private readonly ILogger<HomeController> logger;
-        private readonly IHelperService helpService;
-        private readonly IBlobService blobService;
-        private IHostEnvironment _hostingEnvironment;
-        private IConfiguration configuration;
+        private readonly IHostEnvironment _hostingEnvironment;
+        private readonly IConfiguration configuration;
         private static List<User> leaderboard = new();
         private static DateTime? leaderboardExpiry = null;
         private static List<Game> popularGames = new();
         private static DateTime? popularGamesExpiry = null;
 
-        public HomeController(IUserService user, ILogger<HomeController> logger, IHelperService help, IBlobService blob, IGameService gameService, IHostEnvironment hostingEnvironment, IConfiguration configuration)
+        public HomeController(IUserService user, ILogger<HomeController> logger, IGameService gameService, IHostEnvironment hostingEnvironment, IConfiguration configuration)
         {
             userRepo = user;
             this.logger = logger;
-            helpService = help;
-            blobService = blob;
             this.gameService = gameService;
-            this._hostingEnvironment = hostingEnvironment;
+            _hostingEnvironment = hostingEnvironment;
             this.configuration = configuration;
         }
 
@@ -48,14 +44,13 @@ namespace ScavengerHunt.Controllers
             {
                 UserDto newdt = new()
                 {
-                    Id = user.id,
+                    Id = user.Id,
                     Name = user.Name,
-                    Email = user.Email,
                     ProfileImage = user.ProfileImage,
-                    UserLog = new(){
-                        UserScore = user.UserLog.UserScore,
-                        LastUpdated = user.UserLog.LastUpdated
-                    }
+                    Score = user.Score,
+                    Games = user.Games,
+                    Teams = user.Teams,
+                    LastUpdated = user.LastUpdated,
                 };
                 leaderBoardList.Add(newdt);
             }
@@ -79,7 +74,7 @@ namespace ScavengerHunt.Controllers
                 if(game.IsPrivate) continue;
                 GameDto newdt = new()
                 {
-                    Id = game.id,
+                    Id = game.Id,
                     IsPrivate = game.IsPrivate,
                     Name = game.Name,
                     Description = game.Description,
@@ -113,7 +108,7 @@ namespace ScavengerHunt.Controllers
         {
             List<User> users = await userRepo.GetAllAsync();
             users.Sort(delegate(User x, User y) {
-                return -1 * (x.UserLog.UserScore.CompareTo(y.UserLog.UserScore));
+                return -1 * (x.Score.CompareTo(y.Score));
             });
 
             leaderboard = users.Take(5).ToList();

@@ -47,7 +47,7 @@ namespace ScavengerHunt.Controllers
                 }
                 GameDto gameDto = new()
                 {
-                    Id = game.id,
+                    Id = game.Id,
                     IsPrivate = game.IsPrivate,
                     Name = game.Name,
                     Description = game.Description,
@@ -85,7 +85,7 @@ namespace ScavengerHunt.Controllers
                 {
                     ItemDto itemDto = new()
                     {
-                        Id = item.id,
+                        Id = item.Id,
                         Name = item.Name,
                         Description = item.Description,
                         ImageName = item.ImageName,
@@ -96,7 +96,7 @@ namespace ScavengerHunt.Controllers
 
             gamedto = new()
             {
-                Id = game.id,
+                Id = game.Id,
                 IsPrivate = game.IsPrivate,
                 Name = game.Name,
                 Description = game.Description,
@@ -138,7 +138,7 @@ namespace ScavengerHunt.Controllers
                 Description = res.Description,
                 Address = res.Address,
                 Country = res.Country,
-                UserId = user.id,
+                UserId = user.Id,
                 Coordinate = coordinate,
                 ImageName = res.ImageName,
                 Difficulty = res.Difficulty,
@@ -154,7 +154,7 @@ namespace ScavengerHunt.Controllers
                 return BadRequest(e.Message);
             }
 
-            return CreatedAtAction(nameof(Create), new { newgame.id});
+            return CreatedAtAction(nameof(Create), new { newgame.Id});
         }
 
         // PUT api/Game/5
@@ -166,7 +166,7 @@ namespace ScavengerHunt.Controllers
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return NotFound("User does not exist"); }
 
-            var game = await gameRepo.GetAsync(id, user.id);
+            var game = await gameRepo.GetAsync(id, user.Id);
             if (game == null){ return NotFound("Game not found");}
 
             var newgame = game with
@@ -202,7 +202,7 @@ namespace ScavengerHunt.Controllers
 
         [Authorize]
         [HttpPut("image")]
-        public async Task<ActionResult> UploadImage([FromForm] FileModel file)
+        public async Task<ActionResult> UploadImage([FromForm] ImageForm file)
         {
             if(file.ImageFile == null) return BadRequest();
 
@@ -215,9 +215,7 @@ namespace ScavengerHunt.Controllers
 
             try
             {
-                string date = DateTime.Now.ToBinary().ToString();
-                string name = user.id.ToString() + date;
-                string url = await blobService.SaveImage("games", file.ImageFile, name);
+                string url = await blobService.SaveImage(file.ImageFile);
                 return Created(url, new {ImagePath = url});
             }
             catch (Exception e)
@@ -235,9 +233,12 @@ namespace ScavengerHunt.Controllers
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return NotFound("User does not exist"); }
 
+            var game = await gameRepo.GetByIdAsync(id);
+            if (game == null || game.UserId != user.Id) { return BadRequest("Game with provided ID not found."); }
+
             try
             {
-                gameRepo.DeleteAsync(id, user.id);
+                gameRepo.DeleteAsync(game);
                 await gameRepo.SaveChangesAsync();
             }
             catch (Exception e)
@@ -247,95 +248,5 @@ namespace ScavengerHunt.Controllers
 
             return Ok();
         }
-    
-        // POST api/Game
-        [Authorize, HttpPost("{id}/items")]
-        public async Task<ActionResult> CreateItem(Guid id, [FromBody] ItemCreateDto res)
-        {
-            if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            var user = await helpService.GetCurrentUser(HttpContext);
-            if (user == null){return NotFound("User does not exist");}
-
-            var game = await gameRepo.GetAsync(id, user.id);
-            if(game == null){ return NotFound("Game does not exist!");}
-
-            var item = new Item
-            {
-                Name = res.Name,
-                Description = res.Description,
-                ImageName = res.ImageName
-            };
-            game.Items.Add(item);
-
-            try
-            {
-                gameRepo.UpdateAsync(game);
-                await gameRepo.SaveChangesAsync();
-            }catch(Exception e)
-            {
-                return BadRequest(e.Message);
-            }
-
-            return Ok();
-        }
-
-        // PUT api/Game/5
-        [Authorize, HttpPut("{id}/items/{itemId}")]
-        public async Task<ActionResult> UpdateItem(Guid id, Guid itemId, [FromBody] ItemCreateDto res)
-        {
-            if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            var user = await helpService.GetCurrentUser(HttpContext);
-            if (user == null) { return NotFound("User does not exist"); }
-
-            var game = await gameRepo.GetAsync(id, user.id);
-            if (game == null){ return NotFound("Game not found");}
-
-            var item = game.Items.Where(x => x.id == itemId).FirstOrDefault();
-            if (item == null){ return NotFound("Item not found");}
-
-            item.Name = res.Name;
-            item.Description = res.Description;
-            item.ImageName = res.ImageName;
-
-            try
-            {
-                gameRepo.UpdateAsync(game);
-                await gameRepo.SaveChangesAsync();
-            }catch(Exception e)
-            {
-                return BadRequest(e.Message);
-            }
-
-            return Ok();
-        }
-
-        // DELETE api/Game/5
-        [Authorize]
-        [HttpDelete("{id}/items/{itemId}")]
-        public async Task<ActionResult> DeleteItem(Guid id, Guid itemId)
-        {
-            var user = await helpService.GetCurrentUser(HttpContext);
-            if (user == null) { return NotFound("User does not exist"); }
-
-            var game = await gameRepo.GetAsync(id, user.id);
-            if(game == null){ return NotFound("Game does not exist!");}
-
-            var item = game.Items.Where(x => x.id == itemId).FirstOrDefault();
-            if (item == null){ return NotFound("Item not found");}
-
-            game.Items.Remove(item);
-
-            try
-            {
-                gameRepo.UpdateAsync(game);
-                await gameRepo.SaveChangesAsync();
-            }catch(Exception e)
-            {
-                return BadRequest(e.Message);
-            }
-
-            return Ok();
-        }
-
     }
 }

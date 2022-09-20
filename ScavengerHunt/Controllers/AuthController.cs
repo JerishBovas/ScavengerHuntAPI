@@ -13,25 +13,27 @@ namespace ScavengerHunt.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IUserService userRepo;
+    private readonly IAccountService accountRepo;
     private readonly ITokenService tokenService;
     private readonly ILogger<AuthController> logger;
     private readonly IHelperService helpService;
-    private readonly IBlobService blobService;
 
-    public AuthController(ITokenService tokenService, IUserService user, ILogger<AuthController> logger, IHelperService help, IBlobService blob)
+    public AuthController(ITokenService tokenService, IUserService user, ILogger<AuthController> logger, IHelperService help, IAccountService accountRepo)
     {
         this.tokenService = tokenService;
         userRepo = user;
         this.logger = logger;
         helpService = help;
-        blobService = blob;
+        this.accountRepo = accountRepo;
     }
 
-    //POST: /auth/register
+    // Register user using email and password. Creates new USER and ACCOUNT.
+    // Sets the claim and returns token object.
+    // POST: /auth/register
     [AllowAnonymous, HttpPost("register")]
     public async Task<ActionResult> Register([FromBody] RegisterDto request)
     {
-        if (await helpService.GetUserFromEmail(request.Email) != null)
+        if (await helpService.GetAccountFromEmail(request.Email) != null)
         { 
             return Conflict(new CustomError
             (
@@ -41,30 +43,41 @@ public class AuthController : ControllerBase
 
         CreatePassword(request.Password, out string passwordHash, out string salt);
 
-        var user = new User
+        var account = new Account()
         {
-            Name = request.Name,
             Email = request.Email.ToLower(),
             PasswordHash = passwordHash,
             PasswordSalt = salt
         };
 
+        var user = new User
+        {
+            Id = account.Id,
+            Name = request.Name,
+            Score = 0,
+            Games = 0,
+            Teams = 0,
+            LastUpdated = DateTimeOffset.Now
+        };
+
         List<Claim> claims = new()
         {
-            new Claim(ClaimTypes.Name, user.Name),
-            new Claim(ClaimTypes.NameIdentifier, user.id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
+            new Claim(ClaimTypes.Email, account.Email),
+            new Claim(ClaimTypes.Role, account.Roles)
         };
 
         var accessToken = tokenService.GenerateAccessToken(claims);
         var refreshToken = tokenService.GenerateRefreshToken();
 
-        user.RefToken = refreshToken;
-        user.RefTokenExpiry = DateTime.Now.AddDays(7);
+        account.RefToken = refreshToken;
+        account.RefTokenExpiry = DateTime.Now.AddDays(7);
 
         try
         {
             await userRepo.CreateAsync(user);
+            await accountRepo.CreateAsync(account);
+            await accountRepo.SaveChangesAsync();
             await userRepo.SaveChangesAsync();
         }
         catch(Exception e)
@@ -80,15 +93,17 @@ public class AuthController : ControllerBase
         });
     }
 
-    //POST: /auth/login
+    // Login user based on given email and password.
+    // Sets the claim and returns token object.
+    // POST: /auth/login
     [AllowAnonymous, HttpPost("login")]
     public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto request)
     {
-        var user = await helpService.GetUserFromEmail(request.Email);
+        var account = await helpService.GetAccountFromEmail(request.Email);
 
-        if (user == null){ return NotFound(new CustomError("Login Error", 404, new string[]{"Current user doesn't exist"}));}
+        if (account == null){ return NotFound(new CustomError("Login Error", 404, new string[]{"Current user doesn't exist"}));}
 
-        if(!VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
+        if(!VerifyPassword(request.Password, account.PasswordHash, account.PasswordSalt))
         {
             return BadRequest(
                 new CustomError("Login Error", 400, new string[]{"Password is incorrect"})
@@ -97,19 +112,18 @@ public class AuthController : ControllerBase
 
         List<Claim> claims = new()
         {
-            new Claim(ClaimTypes.Name, user.Name),
-            new Claim(ClaimTypes.NameIdentifier, user.id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
+            new Claim(ClaimTypes.Email, account.Email),
         };
 
         var accessToken = tokenService.GenerateAccessToken(claims);
         var refreshToken = tokenService.GenerateRefreshToken();
 
-        user.RefToken = refreshToken;
-        user.RefTokenExpiry = DateTime.Now.AddDays(7);
+        account.RefToken = refreshToken;
+        account.RefTokenExpiry = DateTime.Now.AddDays(7);
         try
         {
-            await userRepo.SaveChangesAsync();
+            await accountRepo.SaveChangesAsync();
         }
         catch(Exception e)
         {
@@ -124,32 +138,34 @@ public class AuthController : ControllerBase
         });
     }
 
-    //POST /auth/refreshtoken
+    // Refreshes token based on given refresh token.
+    // Invalid refreshtoken returns "session invalid".
+    // POST /auth/refreshtoken
     [AllowAnonymous, HttpPost("refreshtoken")]
     public async Task<IActionResult> Refresh(AuthResponseDto tokenApiModel)
     {
         string accessToken = tokenApiModel.AccessToken;
         string refreshToken = tokenApiModel.RefreshToken;
 
-        User? user = null;
+        Account? account = null;
         var principal = tokenService.GetPrincipalFromExpiredToken(accessToken);
         var id = principal.Claims.SingleOrDefault(u => u.Type == ClaimTypes.NameIdentifier)?.Value;
         bool didParsed = Guid.TryParse(id, out Guid result);
         if(didParsed)
         {
-            user = await userRepo.GetAsync(result);
+            account = await accountRepo.GetAsync(result);
         }
-        if (user is null || user.RefToken != refreshToken || user.RefTokenExpiry <= DateTime.Now)
+        if (account is null || account.RefToken != refreshToken || account.RefTokenExpiry <= DateTime.Now)
             return BadRequest(new CustomError("Session Expired", 400, new string[]{"Session expired. Please login again."})
         );
         
         var newAccessToken = tokenService.GenerateAccessToken(principal.Claims);
         var newRefreshToken = tokenService.GenerateRefreshToken();
-        user.RefToken = newRefreshToken;
-        user.RefTokenExpiry = DateTime.Now.AddDays(7);
+        account.RefToken = newRefreshToken;
+        account.RefTokenExpiry = DateTime.Now.AddDays(7);
         try
         {
-            await userRepo.SaveChangesAsync();
+            await accountRepo.SaveChangesAsync();
         }
         catch (Exception e)
         {
@@ -163,35 +179,38 @@ public class AuthController : ControllerBase
         });
     }
 
-    //POST /auth/revoketoken
+    // Revokes JWT token.
+    // POST /auth/revoketoken
     [HttpPost("revoketoken"), Authorize]
     public async Task<IActionResult> Revoke()
     {
-        var user = await helpService.GetCurrentUser(HttpContext);
-        if (user == null) return Ok();
-        user.RefToken = null;
-        await userRepo.SaveChangesAsync();
+        var account = await helpService.GetCurrentAccount(HttpContext);
+        if (account == null) return Ok();
+        account.RefToken = null;
+        await accountRepo.SaveChangesAsync();
         return Ok();
     }
 
-    //PUT: /auth/resetpassword
+    // Resets password of the user.
+    // Incomplete implementation. Needs attention.
+    // PUT: /auth/resetpassword
     [Authorize, HttpPut("resetpassword")]
     public async Task<ActionResult> ResetPassword(LoginDto res)
     {
-        var user = await helpService.GetCurrentUser(HttpContext);
-        if (user is null)
+        var account = await helpService.GetCurrentAccount(HttpContext);
+        if (account is null)
         {
             return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
         }
 
         CreatePassword(res.Password, out string passwordHash, out string salt);
 
-        user.PasswordHash = passwordHash;
-        user.PasswordSalt = salt;
+        account.PasswordHash = passwordHash;
+        account.PasswordSalt = salt;
 
         try
         {
-            userRepo.UpdateAsync(user);
+            accountRepo.UpdateAsync(account);
             await userRepo.SaveChangesAsync();
         }
         catch (Exception e)
@@ -203,6 +222,7 @@ public class AuthController : ControllerBase
         return Ok();
     }
 
+    // Creates password from the given user password.
     private static void CreatePassword(string password, out string passwordHash, out string passwordSalt)
     {
         using var hmac = new HMACSHA512();
@@ -213,6 +233,7 @@ public class AuthController : ControllerBase
         passwordSalt = Convert.ToBase64String(salt);
     }
 
+    // Verifies user entered password with system generated encrypted password.
     private static bool VerifyPassword(string password, string hash, string salt)
     {
         byte[] passwordHash = Convert.FromBase64String(hash);

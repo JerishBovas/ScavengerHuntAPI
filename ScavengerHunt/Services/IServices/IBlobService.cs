@@ -2,7 +2,7 @@ namespace ScavengerHunt.Services;
 
 public interface IBlobService
 {
-    Task<string> SaveImage(string container, IFormFile file, string name);
+    Task<string> SaveImage(IFormFile file);
 
-    void DeleteImage(string container, string name);
+    void DeleteImage(string name);
 }

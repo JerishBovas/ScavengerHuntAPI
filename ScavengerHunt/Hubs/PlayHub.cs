@@ -1,34 +1,36 @@
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
 using ScavengerHunt.DTOs;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
 
+// This hub controls all the game play
+// Once the user presses a game to play, this hub gets activated
+// After this point everything becomes live.
 namespace ScavengerHunt.Hubs;
-
 public class PlayHub : Hub
 {
     private readonly IGameService gameService;
     private readonly IUserService userService;
+    private readonly IGamePlayService gamePlayService;
     private readonly ILogger<PlayHub> logger;
 
-    public PlayHub(IGameService gameService, IUserService userService, ILogger<PlayHub> logger)
+    public PlayHub(IGameService gameService, IUserService userService, ILogger<PlayHub> logger, IGamePlayService gamePlayService)
     {
         this.gameService = gameService;
         this.userService = userService;
+        this.gamePlayService = gamePlayService;
         this.logger = logger;
     }
 
     public async Task StartGame(Guid gameId)
     {
-        if (Guid.TryParse(Context.ConnectionId, out Guid userId))
+        if (Guid.TryParse(Context.UserIdentifier, out Guid userId))
         {
-            var game = await gameService.GetAsync(userId, gameId);
-            var user = await userService.GetAsync(userId);
-            if (game is null || user is null) { await Clients.Caller.SendAsync("Error", "Game not found!"); return; }
-            GameScore score = new()
+            var game = await gameService.GetByIdAsync(gameId);
+            if (game is null) { await Clients.Caller.SendAsync("Error", "Game not found!"); return; }
+            GamePlay score = new()
             {
-                id = Guid.NewGuid(),
+                UserId = userId,
                 GameEnded = false,
                 GameId = gameId,
                 GameName = game.Name,
@@ -40,11 +42,10 @@ public class PlayHub : Hub
                 EndTime = null
             };
 
-            user.UserLog.ScoreLog.Add(score);
             try
             {
-                userService.UpdateAsync(user);
-                await userService.SaveChangesAsync();
+                await gamePlayService.CreateAsync(score);
+                await gamePlayService.SaveChangesAsync();
             }
             catch (Exception e)
             {
@@ -54,7 +55,7 @@ public class PlayHub : Hub
 
             GameScoreDto scoreDto = new()
             {
-                id = score.id,
+                Id = score.Id,
                 GameId = score.GameId,
                 GameName = score.GameName,
                 NoOfItems = score.NoOfItems,
@@ -73,6 +74,8 @@ public class PlayHub : Hub
 
     public async Task VerifyItem()
     {
-        await Clients.Caller.SendAsync("VerifyItem", "Hello its connected");
+        Console.WriteLine("Item Verified");
+        logger.LogInformation("Item Verified");
+        await Clients.Caller.SendAsync("VerifyItem", Context.UserIdentifier?.ToString());
     }
 }

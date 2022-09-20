@@ -4,38 +4,38 @@ using ScavengerHunt.Models;
 
 namespace ScavengerHunt.Services
 {
-    public class UserService : IUserService
+    public class AccountService : IAccountService
     {
         private readonly ScavengerHuntContext context;
-        private readonly DbSet<User> dbSet;
+        private readonly DbSet<Account> dbSet;
 
-        public UserService(ScavengerHuntContext context)
+        public AccountService(ScavengerHuntContext context)
         {
             this.context = context;
-            dbSet = this.context.Set<User>();
+            dbSet = this.context.Set<Account>();
         }
 
-        public async Task<List<User>> GetAllAsync()
+        public async Task<List<Account>> GetAllAsync()
         {
             return await dbSet.ToListAsync();
         }
 
-        public async Task<User?> GetAsync(Guid id)
+        public async Task<Account?> GetAsync(Guid id)
         {
             return await dbSet.FindAsync(id);
         }
 
-        public async Task CreateAsync(User entity)
+        public async Task CreateAsync(Account entity)
         {
             await dbSet.AddAsync(entity);
         }
 
-        public void UpdateAsync(User entity)
+        public void UpdateAsync(Account entity)
         {
             dbSet.Update(entity);
         }
 
-        public void DeleteAsync(User entity)
+        public void DeleteAsync(Account entity)
         {
             dbSet.Remove(entity);
         }

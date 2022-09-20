@@ -10,7 +10,7 @@ public class CustomError
     public List<string> Errors { get; set; }
     public CustomError(ActionContext context)
     {
-        Title = "Internal server error";
+        Title = "Internal Server Error";
         Status = 500;
         Errors = ConstructErrorMessages(context);
     }

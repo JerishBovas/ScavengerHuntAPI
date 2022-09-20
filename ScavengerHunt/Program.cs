@@ -23,9 +23,13 @@ builder.Services.AddAzureClients(options =>
 });
 builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
+builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddScoped<IGamePlayService, GamePlayService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<ITeamMemberService, TeamMemberService>();
+builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IBlobService, BlobService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddScoped<IHelperService, HelperService>();
@@ -58,7 +62,6 @@ builder.Services.AddMvc()
         });
 builder.Services.AddControllers();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -79,5 +82,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<PlayHub>("/Play");
+app.MapHub<ItemsHub>("/Item");
 
 app.Run();

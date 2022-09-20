@@ -31,7 +31,7 @@ namespace ScavengerHunt.UnitTests
                 Email = "jerishbradlyb@gmail.com",
                 Password = Guid.NewGuid().ToString()   
             };
-            helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(new User());
+            helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(new Account());
             AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
             
             //Act
@@ -73,7 +73,7 @@ namespace ScavengerHunt.UnitTests
                 Email = "jerishbradlyb@gmail.com",
                 Password = Guid.NewGuid().ToString()
             };
-            helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync((User?)null);
+            helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync((Account?)null);
             AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
             
             //Act
@@ -91,7 +91,7 @@ namespace ScavengerHunt.UnitTests
                 Email = "jerishbradlyb@gmail.com",
                 Password = Guid.NewGuid().ToString()
             };
-            helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(new User());
+            helpMethod.Setup(x => x.GetUserFromEmail(It.IsAny<string>())).ReturnsAsync(new Account());
             AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
 
             //Act
@@ -111,7 +111,7 @@ namespace ScavengerHunt.UnitTests
                 Password = Guid.NewGuid().ToString()
             };
             CreatePassword(loginItem.Password, out string hash, out string salt);
-            User user = new()
+            Account user = new()
             {
                 id = Guid.NewGuid(),
                 Name = Guid.NewGuid().ToString(),
@@ -163,7 +163,7 @@ namespace ScavengerHunt.UnitTests
             var claimsPrincipal = new ClaimsPrincipal(identity);
 
             tokenService.Setup(x => x.GetPrincipalFromExpiredToken(authRes.AccessToken)).Returns(claimsPrincipal);
-            userRepo.Setup(x => x.GetAsync(Guid.NewGuid())).ReturnsAsync((User?)null);
+            userRepo.Setup(x => x.GetAsync(Guid.NewGuid())).ReturnsAsync((Account?)null);
             AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
 
             //Act
@@ -186,7 +186,7 @@ namespace ScavengerHunt.UnitTests
                 AccessToken = Guid.NewGuid().ToString(),
                 RefreshToken = Guid.NewGuid().ToString()
             };
-            User testUser = new()
+            Account testUser = new()
             {
                 id = Guid.NewGuid(),
                 Name = Guid.NewGuid().ToString(),
@@ -197,7 +197,7 @@ namespace ScavengerHunt.UnitTests
                 PasswordSalt = Guid.NewGuid().ToString(),
                 RefToken = Guid.NewGuid().ToString(),
                 RefTokenExpiry = DateTime.Now.AddHours(1),
-                UserLog = new UserLog(),
+                UserLog = new User(),
                 Games = new List<Guid>(),
                 Teams = new List<Guid>(),
                 CreatedDate = DateTimeOffset.UtcNow
@@ -235,7 +235,7 @@ namespace ScavengerHunt.UnitTests
                 AccessToken = Guid.NewGuid().ToString(),
                 RefreshToken = Guid.NewGuid().ToString()
             };
-            User testUser = new()
+            Account testUser = new()
             {
                 id = Guid.NewGuid(),
                 Name = Guid.NewGuid().ToString(),
@@ -246,7 +246,7 @@ namespace ScavengerHunt.UnitTests
                 PasswordSalt = Guid.NewGuid().ToString(),
                 RefToken = authRes.RefreshToken,
                 RefTokenExpiry = DateTime.Now,
-                UserLog = new UserLog(),
+                UserLog = new User(),
                 Games = new List<Guid>(),
                 Teams = new List<Guid>(),
                 CreatedDate = DateTimeOffset.UtcNow
@@ -284,7 +284,7 @@ namespace ScavengerHunt.UnitTests
                 AccessToken = Guid.NewGuid().ToString(),
                 RefreshToken = Guid.NewGuid().ToString()
             };
-            User testUser = new()
+            Account testUser = new()
             {
                 id = Guid.NewGuid(),
                 Name = Guid.NewGuid().ToString(),
@@ -295,7 +295,7 @@ namespace ScavengerHunt.UnitTests
                 PasswordSalt = Guid.NewGuid().ToString(),
                 RefToken = authRes.RefreshToken,
                 RefTokenExpiry = DateTime.Now.AddHours(1),
-                UserLog = new UserLog(),
+                UserLog = new User(),
                 Games = new List<Guid>(),
                 Teams = new List<Guid>(),
                 CreatedDate = DateTimeOffset.UtcNow
@@ -332,7 +332,7 @@ namespace ScavengerHunt.UnitTests
         public void Revoke_WithUserNull_ReturnsLoginError()
         {
             //Arrange
-            helpMethod.Setup(x => x.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync((User?)null);
+            helpMethod.Setup(x => x.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync((Account?)null);
             AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
 
             //Act
@@ -346,7 +346,7 @@ namespace ScavengerHunt.UnitTests
         public void Revoke_WithValidUser_ReturnsLoginError()
         {
             //Arrange
-            helpMethod.Setup(x => x.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync(new User());
+            helpMethod.Setup(x => x.GetCurrentUser(It.IsAny<HttpContext>())).ReturnsAsync(new Account());
             AuthController ac = new(tokenService.Object, userRepo.Object, logger.Object, helpMethod.Object, blobService.Object);
 
             //Act

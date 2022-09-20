@@ -2,7 +2,7 @@
 {
     public record struct GameScoreDto
     {
-        public Guid id { get; set; }
+        public Guid Id { get; set; }
         public Guid GameId { get; set; }
         public string GameName { get; set; }
         public int NoOfItems { get; set; }

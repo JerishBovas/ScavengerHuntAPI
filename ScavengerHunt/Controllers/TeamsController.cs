@@ -34,25 +34,21 @@ namespace ScavengerHunt.Controllers
 
             var Teams = await teamRepo.GetAllAsync();
 
-            if (!Teams.Any())
-            {
-                return TeamsDto;
-            }
-
             foreach (var team in Teams)
             {
                 if (!team.IsOpen)
                 {
                     continue;
                 }
-                TeamDto grpDto = new()
+                TeamDto teamDto = new()
                 {
-                    Id = team.id,
+                    Id = team.Id,
+                    UserId = team.UserId,
                     IsOpen = team.IsOpen,
                     Title = team.Title,
                     Description = team.Description
                 };
-                TeamsDto.Add(grpDto);
+                TeamsDto.Add(teamDto);
             }
             return TeamsDto;
         }
@@ -60,41 +56,18 @@ namespace ScavengerHunt.Controllers
         // GET api/team/5
         [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult<TeamDetailDto>> Get(Guid id)
+        public async Task<ActionResult<TeamDto>> Get(Guid id)
         {
-            List<GameScoreDto> scoreLog = new();
-
             var team = await teamRepo.GetByIdAsync(id);
             if (team == null){ return NotFound("Team doesn't exist");}
 
-            if (team.PastWinners.Any())
+            TeamDto dto = new()
             {
-                foreach (var item in team.PastWinners)
-                {
-                    GameScoreDto scoreLogDto = new()
-                    {
-                        id = item.id,
-                        GameId = item.GameId,
-                        GameName = item.GameName,
-                        NoOfItems = item.NoOfItems,
-                        ItemsFound = item.ItemsFound,
-                        Score = item.Score,
-                        StartTime = item.StartTime,
-                        EndTime = item.EndTime
-
-                    };
-                    scoreLog.Add(scoreLogDto);
-                }
-            }
-
-            TeamDetailDto dto = new()
-            {
-                Id = team.id,
+                Id = team.Id,
+                UserId=team.UserId,
                 IsOpen = team.IsOpen,
                 Title = team.Title,
                 Description = team.Description,
-                Members = team.Members,
-                PastWinners = scoreLog,
             };
 
             return dto;
@@ -105,19 +78,16 @@ namespace ScavengerHunt.Controllers
         [HttpPost]
         public async Task<ActionResult> Create([FromBody] TeamCreateDto res)
         {
-            if (!ModelState.IsValid) { return BadRequest(ModelState); }
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return NotFound("User not found"); }
 
             Team newgrp = new()
             {
+                UserId = user.Id,
                 IsOpen = res.IsOpen,
                 Title = res.Title,
                 Description = res.Description,
                 TeamIcon = res.TeamIcon,
-                CreatedUserId = user.id,
-                Members = new List<Guid> { user.id},
-                PastWinners = new List<GameScore>(),
             };
 
             try
@@ -130,7 +100,7 @@ namespace ScavengerHunt.Controllers
                 return BadRequest(e.Message);
             }
 
-            return CreatedAtAction(nameof(Get), new {newgrp.id});
+            return CreatedAtAction(nameof(Get), new {newgrp.Id});
         }
 
         // PUT api/team/5
@@ -138,11 +108,10 @@ namespace ScavengerHunt.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(Guid id, [FromBody] TeamCreateDto res)
         {
-            if (!ModelState.IsValid) { return BadRequest(ModelState); }
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user == null) { return Unauthorized("User not found"); }
 
-            var grp = await teamRepo.GetAsync(id, user.id);
+            var grp = await teamRepo.GetAsync(user.Id, id);
             if (grp == null){return NotFound("Team doesn't exist");}
 
             Team newgrp = grp with
@@ -168,7 +137,7 @@ namespace ScavengerHunt.Controllers
 
         [Authorize]
         [HttpPut("image")]
-        public async Task<ActionResult> UploadImage([FromForm] FileModel file)
+        public async Task<ActionResult> UploadImage([FromForm] ImageForm file)
         {
             if(file.ImageFile == null) return BadRequest();
 
@@ -181,9 +150,7 @@ namespace ScavengerHunt.Controllers
 
             try
             {
-                string date = DateTime.Now.ToBinary().ToString();
-                string name = user.id.ToString() + date;
-                string url = await blobService.SaveImage("teams", file.ImageFile, name);
+                string url = await blobService.SaveImage(file.ImageFile);
                 return Created(url, new {ImagePath = url});
             }
             catch (Exception e)
@@ -201,9 +168,12 @@ namespace ScavengerHunt.Controllers
             var user = await helpService.GetCurrentUser(HttpContext);
             if (user is null) { return NotFound("User not found"); }
 
+            var team = await teamRepo.GetByIdAsync(id);
+            if (team is null || team.UserId != user.Id) { return BadRequest("Team with provided ID not found."); }
+
             try
             {
-                teamRepo.DeleteAsync(id, user.id);
+                teamRepo.DeleteAsync(team);
                 await teamRepo.SaveChangesAsync();
             }
             catch (Exception e)
