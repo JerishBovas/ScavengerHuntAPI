@@ -20,9 +20,9 @@ namespace ScavengerHunt.Services
             return await dbSet.ToListAsync();
         }
 
-        public async Task<Account?> GetAsync(Guid id)
+        public async Task<Account?> GetAsync(string email)
         {
-            return await dbSet.FindAsync(id);
+            return await dbSet.FindAsync(email);
         }
 
         public async Task CreateAsync(Account entity)

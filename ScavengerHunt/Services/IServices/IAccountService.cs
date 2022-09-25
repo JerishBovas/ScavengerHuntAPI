@@ -4,7 +4,7 @@ namespace ScavengerHunt.Services
 {
     public interface IAccountService
     {
-        Task<Account?> GetAsync(Guid id);
+        Task<Account?> GetAsync(string email);
         Task<List<Account>> GetAllAsync();
         Task CreateAsync(Account entity);
         void UpdateAsync(Account entity);

@@ -4,12 +4,12 @@ namespace ScavengerHunt.Models
 {
     public class User
     {
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = "";
         public string ProfileImage { get; set; } = "";
         public int Score { get; set; }
-        public int Games { get; set; }
-        public int Teams { get; set; }
+        public List<string> Games { get; set; } = new();
+        public List<string> Teams { get; set; } = new();
         public DateTimeOffset LastUpdated { get; set; }
     }
 }

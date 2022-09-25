@@ -4,7 +4,7 @@ namespace ScavengerHunt.Services
 {
     public interface IGamePlayService
     {
-        Task<GamePlay?> GetAsync(Guid id, Guid gamePlayId);
+        Task<GamePlay?> GetAsync(Guid id, Guid userId);
         Task<GamePlay?> GetByIdAsync(Guid id);
         Task<List<GamePlay>> GetAllAsync();
         Task CreateAsync(GamePlay entity);

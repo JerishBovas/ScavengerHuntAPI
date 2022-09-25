@@ -11,5 +11,6 @@
         public string ImageName { get; set; }
         public int Difficulty { get; set; }
         public List<string> Tags { get; set; }
+        public int GameDuration { get; set; }
     }
 }

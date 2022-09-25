@@ -28,7 +28,6 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IGamePlayService, GamePlayService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
-builder.Services.AddScoped<ITeamMemberService, TeamMemberService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IBlobService, BlobService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
@@ -61,6 +60,7 @@ builder.Services.AddMvc()
             };
         });
 builder.Services.AddControllers();
+builder.Services.AddAutoMapper(typeof(Program));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

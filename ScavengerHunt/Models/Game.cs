@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace ScavengerHunt.Models
+﻿namespace ScavengerHunt.Models
 {
     // This Object holds the data about each games
     // Every users can see other user's games as long as its public
@@ -21,6 +19,7 @@ namespace ScavengerHunt.Models
         public int Difficulty { get; set; } = 0;
         public List<int> Ratings { get; set; } = new List<int>();
         public List<string> Tags { get; set; } = new List<string>();
+        public int GameDuration {get; set; }
         public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset LastUpdated { get; set; } = DateTimeOffset.UtcNow;
         public int TimesPlayed { get; set; } = 0;

@@ -17,45 +17,37 @@ namespace ScavengerHunt.Data
             builder.Entity<Account>()
                 .HasNoDiscriminator()
                 .ToContainer("Accounts")
-                .HasPartitionKey(nameof(Account.Id));
+                .HasPartitionKey(nameof(Account.Email))
+                .HasKey(a => a.Email);
 
             builder.Entity<User>()
                 .HasNoDiscriminator()
                 .ToContainer("Users")
-                .HasPartitionKey(nameof(User.Id));
+                .HasPartitionKey(nameof(User.Id))
+                .HasKey(u => u.Id);
 
             builder.Entity<Game>()
-                .HasNoDiscriminator()
                 .ToContainer(nameof(Games))
-                .HasPartitionKey(nameof(Game.Id));
-
-            builder.Entity<Item>()
-                .HasNoDiscriminator()
-                .ToContainer("Items")
-                .HasPartitionKey(nameof(Item.GameId));
+                .HasPartitionKey(nameof(Game.UserId))
+                .HasKey(da => new{da.Id, da.UserId});
 
             builder.Entity<GamePlay>()
                 .HasNoDiscriminator()
                 .ToContainer("GamePlays")
-                .HasPartitionKey(nameof(GamePlay.UserId));
+                .HasPartitionKey(nameof(GamePlay.UserId))
+                .HasKey(da => new{da.Id, da.UserId});
 
             builder.Entity<Team>()
                 .HasNoDiscriminator()
                 .ToContainer(nameof(Teams))
-                .HasPartitionKey(nameof(Team.UserId));
-
-            builder.Entity<TeamMember>()
-                .HasNoDiscriminator()
-                .ToContainer("TeamUsers")
-                .HasNoKey();
+                .HasPartitionKey(nameof(Team.AdminId))
+                .HasKey(da => new{da.Id, da.AdminId});
         }
 
         public DbSet<Account>? Accounts { get; set; }
         public DbSet<User>? Users { get; set; }
         public DbSet<Game>? Games { get; set; }
-        public DbSet<Item>? Items { get; set; }
         public DbSet<GamePlay>? GamePlays { get; set; }
         public DbSet<Team>? Teams { get; set; }
-        public DbSet<TeamMember>? TeamUsers { get; set; }
     }
 }

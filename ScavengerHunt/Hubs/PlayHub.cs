@@ -26,7 +26,7 @@ public class PlayHub : Hub
     {
         if (Guid.TryParse(Context.UserIdentifier, out Guid userId))
         {
-            var game = await gameService.GetByIdAsync(gameId);
+            var game = await gameService.GetAsync(gameId, userId);
             if (game is null) { await Clients.Caller.SendAsync("Error", "Game not found!"); return; }
             GamePlay score = new()
             {
@@ -35,10 +35,9 @@ public class PlayHub : Hub
                 GameId = gameId,
                 GameName = game.Name,
                 NoOfItems = game.Items.Count,
-                ItemsFound = 0,
+                ItemsLeftToFind = new(),
                 Score = 0,
                 StartTime = DateTimeOffset.Now,
-                ExpiryTime = DateTimeOffset.Now.AddMinutes(game.Items.Count),
                 EndTime = null
             };
 
@@ -53,13 +52,12 @@ public class PlayHub : Hub
                 return;
             }
 
-            GameScoreDto scoreDto = new()
+            GamePlayDto scoreDto = new()
             {
                 Id = score.Id,
                 GameId = score.GameId,
                 GameName = score.GameName,
                 NoOfItems = score.NoOfItems,
-                ItemsFound = score.ItemsFound,
                 Score = score.Score,
                 StartTime = score.StartTime,
                 EndTime = score.EndTime

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ScavengerHunt.DTOs;
 using ScavengerHunt.Models;
@@ -15,83 +16,63 @@ namespace ScavengerHunt.Controllers
         private readonly ILogger<HomeController> logger;
         private readonly IHostEnvironment _hostingEnvironment;
         private readonly IConfiguration configuration;
+        private readonly IMapper mapper;
         private static List<User> leaderboard = new();
         private static DateTime? leaderboardExpiry = null;
         private static List<Game> popularGames = new();
         private static DateTime? popularGamesExpiry = null;
 
-        public HomeController(IUserService user, ILogger<HomeController> logger, IGameService gameService, IHostEnvironment hostingEnvironment, IConfiguration configuration)
+        public HomeController(IUserService user, ILogger<HomeController> logger, IGameService gameService, IHostEnvironment hostingEnvironment, IConfiguration configuration, IMapper mapper)
         {
             userRepo = user;
             this.logger = logger;
             this.gameService = gameService;
             _hostingEnvironment = hostingEnvironment;
             this.configuration = configuration;
+            this.mapper = mapper;
         }
 
         //Get /leaderboard
         [AllowAnonymous, HttpGet("api/v1/Home/leaderboard")]
         public async Task<ActionResult> GetLeaderBoard()
         {
-            List<UserDto> leaderBoardList = new();
-
-            if(leaderboardExpiry is null || leaderboardExpiry < DateTime.Now)
+            try
+            {
+                if(leaderboardExpiry is null || leaderboardExpiry < DateTime.Now)
             {
                 await updateLeaderboard();
                 leaderboardExpiry = DateTime.Now.AddMinutes(60);
             }
-            foreach(var user in leaderboard)
-            {
-                UserDto newdt = new()
-                {
-                    Id = user.Id,
-                    Name = user.Name,
-                    ProfileImage = user.ProfileImage,
-                    Score = user.Score,
-                    Games = user.Games,
-                    Teams = user.Teams,
-                    LastUpdated = user.LastUpdated,
-                };
-                leaderBoardList.Add(newdt);
-            }
 
-            return Ok(leaderBoardList);
+            return Ok(mapper.Map<List<UserDto>>(leaderboard));
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e.Message);
+                return StatusCode(503, new CustomError("Internal Server Error", 503, new string[]{"An internal error occured. Please email to jerishbradlyb@gmail.com and we will try to fix it."}));
+            }
         }
     
         //Get /populargames
         [AllowAnonymous, HttpGet("api/v1/Home/PopularGames")]
         public async Task<ActionResult> GetPopularGames()
         {
-            List<GameDto> popularGamesList = new();
-
-            if(popularGamesExpiry is null || popularGamesExpiry < DateTime.Now)
+            try
             {
-                await updatePopularGames();
-                popularGamesExpiry = DateTime.Now.AddMinutes(60);
-            }
-            foreach(var game in popularGames)
-            {
-                if(game.IsPrivate) continue;
-                GameDto newdt = new()
+                if(popularGamesExpiry is null || popularGamesExpiry < DateTime.Now)
                 {
-                    Id = game.Id,
-                    IsPrivate = game.IsPrivate,
-                    Name = game.Name,
-                    Description = game.Description,
-                    Address = game.Address,
-                    Country = game.Country,
-                    Coordinate = new(){Latitude = game.Coordinate.Latitude, Longitude = game.Coordinate.Longitude},
-                    ImageName = game.ImageName,
-                    Difficulty = game.Difficulty,
-                    Ratings = game.Ratings.Average(),
-                    Tags = game.Tags,
-                    CreatedDate = game.CreatedDate,
-                    LastUpdated = game.LastUpdated
-                };
-                popularGamesList.Add(newdt);
-            }
+                    await updatePopularGames();
+                    popularGamesExpiry = DateTime.Now.AddMinutes(60);
+                }
+                popularGames.RemoveAll(g => g.IsPrivate == true);
 
-            return Ok(popularGamesList);
+                return Ok(mapper.Map<List<GameDto>>(popularGames));
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e.Message);
+                return StatusCode(503, new CustomError("Internal Server Error", 503, new string[]{"An internal error occured. Please email to jerishbradlyb@gmail.com and we will try to fix it."}));
+            }
         }
 
         //GET: /.well-known/apple-app-site-association

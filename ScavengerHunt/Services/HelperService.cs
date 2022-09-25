@@ -21,12 +21,34 @@ public class HelperService : IHelperService
             if (identity.Claims.SingleOrDefault(u => u.Type == ClaimTypes.NameIdentifier)?.Value is string id)
             {
                 bool didParse = Guid.TryParse(id, out Guid result);
-                if(!didParse){ return null;}
+                if(didParse)
+                {
+                    return await userService.GetAsync(result);
+                }
+            }
+            else if(identity.Claims.SingleOrDefault(u => u.Type == ClaimTypes.Email)?.Value is string email)
+            {
+                var account = await accountService.GetAsync(email);
+                if(account != null)
+                {
+                    return await userService.GetAsync(account.UserId);
+                }
+            }
+        }
+        return null;
+    }
 
-                User? user = await userService.GetAsync(result);
-                if(user != null) return user;
-
-                return null;
+    public Guid? GetCurrentUserId(HttpContext context)
+    {
+        if (context.User.Identity is ClaimsIdentity identity)
+        {
+            if (identity.Claims.SingleOrDefault(u => u.Type == ClaimTypes.NameIdentifier)?.Value is string id)
+            {
+                bool didParse = Guid.TryParse(id, out Guid result);
+                if(didParse)
+                {
+                    return result;
+                }
             }
         }
         return null;
@@ -36,24 +58,11 @@ public class HelperService : IHelperService
     {
         if (context.User.Identity is ClaimsIdentity identity)
         {
-            if (identity.Claims.SingleOrDefault(u => u.Type == ClaimTypes.NameIdentifier)?.Value is string id)
+            if (identity.Claims.SingleOrDefault(u => u.Type == ClaimTypes.Email)?.Value is string id)
             {
-                bool didParse = Guid.TryParse(id, out Guid result);
-                if (!didParse) { return null; }
-
-                Account? account = await accountService.GetAsync(result);
-                if (account != null) return account;
-
-                return null;
+                return await accountService.GetAsync(id);
             }
         }
         return null;
-    }
-
-    public async Task<Account?> GetAccountFromEmail(string email)
-    {
-        List<Account> users = await accountService.GetAllAsync();
-        if(users.Count == 0) return null;
-        return users.SingleOrDefault(x => x.Email.ToLower() == email.ToLower());
     }
 }

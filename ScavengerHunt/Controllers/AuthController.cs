@@ -33,64 +33,64 @@ public class AuthController : ControllerBase
     [AllowAnonymous, HttpPost("register")]
     public async Task<ActionResult> Register([FromBody] RegisterDto request)
     {
-        if (await helpService.GetAccountFromEmail(request.Email) != null)
-        { 
-            return Conflict(new CustomError
-            (
-                "Register Error", 409, new string[]{"Email provided already Exists"}
-            ));
-        }
-
-        CreatePassword(request.Password, out string passwordHash, out string salt);
-
-        var account = new Account()
-        {
-            Email = request.Email.ToLower(),
-            PasswordHash = passwordHash,
-            PasswordSalt = salt
-        };
-
-        var user = new User
-        {
-            Id = account.Id,
-            Name = request.Name,
-            Score = 0,
-            Games = 0,
-            Teams = 0,
-            LastUpdated = DateTimeOffset.Now
-        };
-
-        List<Claim> claims = new()
-        {
-            new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
-            new Claim(ClaimTypes.Email, account.Email),
-            new Claim(ClaimTypes.Role, account.Roles)
-        };
-
-        var accessToken = tokenService.GenerateAccessToken(claims);
-        var refreshToken = tokenService.GenerateRefreshToken();
-
-        account.RefToken = refreshToken;
-        account.RefTokenExpiry = DateTime.Now.AddDays(7);
-
         try
         {
+            if (await accountRepo.GetAsync(request.Email) != null)
+            { 
+                return Conflict(new CustomError
+                (
+                    "Register Error", 409, new string[]{"Email provided already Exists"}
+                ));
+            }
+
+            CreatePassword(request.Password, out string passwordHash, out string salt);
+
+            var user = new User
+            {
+                Name = request.Name,
+                Score = 0,
+                Games = new(),
+                Teams = new(),
+                LastUpdated = DateTimeOffset.Now
+            };
+            var account = new Account()
+            {
+                Email = request.Email.ToLower(),
+                PasswordHash = passwordHash,
+                PasswordSalt = salt,
+                Roles = "user",
+                UserId = user.Id
+            };
+
+            List<Claim> claims = new()
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, account.Email),
+                new Claim(ClaimTypes.Role, account.Roles)
+            };
+
+            var accessToken = tokenService.GenerateAccessToken(claims);
+            var refreshToken = tokenService.GenerateRefreshToken();
+
+            account.RefToken = refreshToken;
+            account.RefTokenExpiry = DateTime.Now.AddDays(7);
+
             await userRepo.CreateAsync(user);
             await accountRepo.CreateAsync(account);
             await accountRepo.SaveChangesAsync();
             await userRepo.SaveChangesAsync();
+
+            return Ok(new AuthResponseDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            });
         }
         catch(Exception e)
         {
             logger.LogError(e.Message);
             return StatusCode(502,new CustomError("Server Error", 502, new string[]{"Something went wrong on our side. Please try again."}));
         }
-
-        return Ok(new AuthResponseDto
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken
-        });
     }
 
     // Login user based on given email and password.
@@ -99,43 +99,45 @@ public class AuthController : ControllerBase
     [AllowAnonymous, HttpPost("login")]
     public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto request)
     {
-        var account = await helpService.GetAccountFromEmail(request.Email);
-
-        if (account == null){ return NotFound(new CustomError("Login Error", 404, new string[]{"Current user doesn't exist"}));}
-
-        if(!VerifyPassword(request.Password, account.PasswordHash, account.PasswordSalt))
-        {
-            return BadRequest(
-                new CustomError("Login Error", 400, new string[]{"Password is incorrect"})
-            );
-        }
-
-        List<Claim> claims = new()
-        {
-            new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
-            new Claim(ClaimTypes.Email, account.Email),
-        };
-
-        var accessToken = tokenService.GenerateAccessToken(claims);
-        var refreshToken = tokenService.GenerateRefreshToken();
-
-        account.RefToken = refreshToken;
-        account.RefTokenExpiry = DateTime.Now.AddDays(7);
         try
         {
+            var account = await accountRepo.GetAsync(request.Email);
+
+            if (account == null){ return NotFound(new CustomError("Login Error", 404, new string[]{"Current user doesn't exist"}));}
+
+            if(!VerifyPassword(request.Password, account.PasswordHash, account.PasswordSalt))
+            {
+                return BadRequest(
+                    new CustomError("Login Error", 400, new string[]{"Password is incorrect"})
+                );
+            }
+
+            List<Claim> claims = new()
+            {
+                new Claim(ClaimTypes.NameIdentifier, account.UserId.ToString()),
+                new Claim(ClaimTypes.Email, account.Email),
+                new Claim(ClaimTypes.Role, account.Roles)
+            };
+
+            var accessToken = tokenService.GenerateAccessToken(claims);
+            var refreshToken = tokenService.GenerateRefreshToken();
+
+            account.RefToken = refreshToken;
+            account.RefTokenExpiry = DateTime.Now.AddDays(7);
+
             await accountRepo.SaveChangesAsync();
+
+            return Ok(new AuthResponseDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            });
         }
         catch(Exception e)
         {
             logger.LogError(e.Message);
             return StatusCode(502,new CustomError("Server Error", 502, new string[]{"Something went wrong on our side. Please try again."}));
         }
-
-        return Ok(new AuthResponseDto
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken
-        });
     }
 
     // Refreshes token based on given refresh token.
@@ -144,39 +146,42 @@ public class AuthController : ControllerBase
     [AllowAnonymous, HttpPost("refreshtoken")]
     public async Task<IActionResult> Refresh(AuthResponseDto tokenApiModel)
     {
-        string accessToken = tokenApiModel.AccessToken;
-        string refreshToken = tokenApiModel.RefreshToken;
-
-        Account? account = null;
-        var principal = tokenService.GetPrincipalFromExpiredToken(accessToken);
-        var id = principal.Claims.SingleOrDefault(u => u.Type == ClaimTypes.NameIdentifier)?.Value;
-        bool didParsed = Guid.TryParse(id, out Guid result);
-        if(didParsed)
-        {
-            account = await accountRepo.GetAsync(result);
-        }
-        if (account is null || account.RefToken != refreshToken || account.RefTokenExpiry <= DateTime.Now)
-            return BadRequest(new CustomError("Session Expired", 400, new string[]{"Session expired. Please login again."})
-        );
-        
-        var newAccessToken = tokenService.GenerateAccessToken(principal.Claims);
-        var newRefreshToken = tokenService.GenerateRefreshToken();
-        account.RefToken = newRefreshToken;
-        account.RefTokenExpiry = DateTime.Now.AddDays(7);
         try
         {
+            string accessToken = tokenApiModel.AccessToken;
+            string refreshToken = tokenApiModel.RefreshToken;
+
+            var principal = tokenService.GetPrincipalFromExpiredToken(accessToken);
+            var email = principal.Claims.SingleOrDefault(u => u.Type == ClaimTypes.Email)?.Value;
+            
+            if(email == null)
+            { 
+                return BadRequest(new CustomError("Session Expired", 400, new string[]{"Session expired. Please login again."}));
+            }
+
+            var account = await accountRepo.GetAsync(email);
+
+            if (account is null || account.RefToken != refreshToken || account.RefTokenExpiry <= DateTime.Now)
+                return BadRequest(new CustomError("Session Expired", 400, new string[]{"Session expired. Please login again."})
+            );
+            
+            var newAccessToken = tokenService.GenerateAccessToken(principal.Claims);
+            var newRefreshToken = tokenService.GenerateRefreshToken();
+            account.RefToken = newRefreshToken;
+            account.RefTokenExpiry = DateTime.Now.AddDays(7);
             await accountRepo.SaveChangesAsync();
+            
+            return Ok(new AuthResponseDto()
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken
+            });
         }
         catch (Exception e)
         {
             logger.LogError(e.Message);
             return StatusCode(502,new CustomError("Server Error", 502, new string[]{"Something went wrong on our side. Please try again."}));
         }
-        return Ok(new AuthResponseDto()
-        {
-            AccessToken = newAccessToken,
-            RefreshToken = newRefreshToken
-        });
     }
 
     // Revokes JWT token.
@@ -184,11 +189,19 @@ public class AuthController : ControllerBase
     [HttpPost("revoketoken"), Authorize]
     public async Task<IActionResult> Revoke()
     {
-        var account = await helpService.GetCurrentAccount(HttpContext);
-        if (account == null) return Ok();
-        account.RefToken = null;
-        await accountRepo.SaveChangesAsync();
-        return Ok();
+        try
+        {
+            var account = await helpService.GetCurrentAccount(HttpContext);
+            if (account == null) return Ok();
+            account.RefToken = null;
+            await accountRepo.SaveChangesAsync();
+            return Ok();
+        }
+        catch(Exception e)
+        {
+            logger.LogError(e.Message);
+            return StatusCode(502,new CustomError("Server Error", 502, new string[]{"Something went wrong on our side. Please try again."}));
+        }
     }
 
     // Resets password of the user.
