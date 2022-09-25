@@ -9,15 +9,15 @@ namespace ScavengerHunt.Controllers
 {
     [Route("api/v1/[controller]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class UsersController : ControllerBase
     {
         private readonly IUserService userRepo;
-        private readonly ILogger<UserController> logger;
+        private readonly ILogger<UsersController> logger;
         private readonly IHelperService helpService;
         private readonly IBlobService blobService;
         private readonly IMapper mapper;
 
-        public UserController(IUserService userRepo, ILogger<UserController> logger, IHelperService helpService, IBlobService blobService, IMapper mapper)
+        public UsersController(IUserService userRepo, ILogger<UsersController> logger, IHelperService helpService, IBlobService blobService, IMapper mapper)
         {
             this.userRepo = userRepo;
             this.logger = logger;

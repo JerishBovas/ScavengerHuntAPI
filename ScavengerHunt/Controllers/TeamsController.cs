@@ -9,16 +9,16 @@ namespace ScavengerHunt.Controllers
 {
     [Route("api/v1/[controller]")]
     [ApiController]
-    public class TeamController : ControllerBase
+    public class TeamsController : ControllerBase
     {
         private readonly ITeamService teamRepo;
         private readonly IUserService userRepo;
-        private readonly ILogger<TeamController> logger;
+        private readonly ILogger<TeamsController> logger;
         private readonly IHelperService helpService;
         private readonly IBlobService blobService;
         private readonly IMapper mapper;
 
-        public TeamController(ITeamService teamRepo, IUserService userRepo, ILogger<TeamController> logger, IHelperService help, IBlobService blob, IMapper mapper)
+        public TeamsController(ITeamService teamRepo, IUserService userRepo, ILogger<TeamsController> logger, IHelperService help, IBlobService blob, IMapper mapper)
         {
             this.teamRepo = teamRepo;
             this.userRepo = userRepo;
