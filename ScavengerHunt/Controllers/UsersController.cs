@@ -76,9 +76,9 @@ namespace ScavengerHunt.Controllers
 
                 string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString();
                 string url = await blobService.UploadImage("users", name, file.ImageFile.OpenReadStream());
-                blobService.DeleteImage("users", user.ProfileImage);
+                blobService.DeleteImage("users", user.ProfileImage.Split('/').Last());
                 user.ProfileImage = url;
-                userRepo.UpdateAsync(user);
+                
                 await userRepo.SaveChangesAsync();
                 return Created(url, new { ImagePath = user.ProfileImage });
             }

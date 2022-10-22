@@ -8,7 +8,7 @@ namespace ScavengerHunt.Models
         public bool IsOpen { get; set; }
         public string Title { get; set; } = "";
         public string Description { get; set; } = "";
-        public List<string> Members = new();
+        public List<string> Members { get; set; } = new();
         public string TeamIcon { get; set; } = "";
     }
 }

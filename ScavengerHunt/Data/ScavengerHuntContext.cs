@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ScavengerHunt.Models;
-using Newtonsoft.Json;
 
 namespace ScavengerHunt.Data
 {

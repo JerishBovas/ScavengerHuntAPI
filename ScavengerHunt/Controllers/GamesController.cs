@@ -102,10 +102,9 @@ namespace ScavengerHunt.Controllers
             }
         }
 
-        // PUT api/Game/5
-        [Authorize]
-        [HttpPut("{id}")]
-        public async Task<ActionResult> Update(Guid id, [FromBody] GameCreateDto res)
+        // PUT api/Game/mode
+        [Authorize, HttpPost("{id}/mode")]
+        public async Task<ActionResult> ChangeMode(Guid id, [FromQuery] bool edit)
         {
             try
             {
@@ -115,8 +114,8 @@ namespace ScavengerHunt.Controllers
                 var game = await gameRepo.GetAsync(id, user.Id);
                 if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"}));}
                 
-                game = mapper.Map<GameCreateDto, Game>(res, game);
-                game.LastUpdated = DateTimeOffset.Now;
+                game.LastUpdated = DateTimeOffset.UtcNow;
+                game.IsReadyToPlay = !edit;
                 await gameRepo.SaveChangesAsync();
 
                 return Ok();
@@ -128,9 +127,36 @@ namespace ScavengerHunt.Controllers
             }
         }
 
-        [Authorize]
-        [HttpPut("image")]
-        public async Task<ActionResult> UploadImage([FromForm] ImageForm file)
+        // PUT api/Game/5
+        [Authorize, HttpPut("{id}")]
+        public async Task<ActionResult> Update(Guid id, [FromBody] GameCreateDto res)
+        {
+            try
+            {
+                var user = await helpService.GetCurrentUser(HttpContext);
+                if (user == null){return NotFound(new CustomError("Bad Request", 404, new string[]{"User does not exist"}));}
+
+                var game = await gameRepo.GetAsync(id, user.Id);
+                if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"}));}
+
+                if(game.IsReadyToPlay){return BadRequest(new CustomError("Not Permitted", 404, new string[]{"Operation not permitted. Enter edit mode first and try again."}));}
+                
+                game = mapper.Map<GameCreateDto, Game>(res, game);
+                game.LastUpdated = DateTimeOffset.UtcNow;
+                game.IsReadyToPlay = false;
+                await gameRepo.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e.Message);
+                return StatusCode(503, new CustomError("Internal Server Error", 503, new string[]{"An internal error occured. Please email to jerishbradlyb@gmail.com and we will try to fix it."}));
+            }
+        }
+
+        [Authorize, HttpPut("{id}/image")]
+        public async Task<ActionResult> UploadImage(Guid id, [FromForm] ImageForm file)
         {
             try
             {
@@ -142,8 +168,17 @@ namespace ScavengerHunt.Controllers
                     return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
                 }
 
+                var game = await gameRepo.GetAsync(id, user.Id);
+                if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"}));}
+
+                if(game.IsReadyToPlay){return BadRequest(new CustomError("Not Permitted", 404, new string[]{"Operation not permitted. Enter edit mode first and try again."}));}
+
                 string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString();
                 string url = await blobService.UploadImage("games", name, file.ImageFile.OpenReadStream());
+                
+                game.ImageName = url;
+                game.LastUpdated = DateTimeOffset.UtcNow;
+                await gameRepo.SaveChangesAsync();
                 return Created(url, new {ImagePath = url});
             }
             catch (Exception e)
@@ -154,8 +189,7 @@ namespace ScavengerHunt.Controllers
         }
 
         // DELETE api/Game/5
-        [Authorize]
-        [HttpDelete("{id}")]
+        [Authorize, HttpDelete("{id}")]
         public async Task<ActionResult> Delete(Guid id)
         {
             try
@@ -167,6 +201,7 @@ namespace ScavengerHunt.Controllers
                 if (game == null || game.UserId != user.Id) { return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"})); }
 
                 gameRepo.DeleteAsync(game);
+                user.Games.Remove(game.Id.ToString());
                 await gameRepo.SaveChangesAsync();
 
                 return Ok();

@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
                 Score = 0,
                 Games = new(),
                 Teams = new(),
-                LastUpdated = DateTimeOffset.Now
+                LastUpdated = DateTimeOffset.UtcNow
             };
             var account = new Account()
             {

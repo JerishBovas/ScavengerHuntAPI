@@ -7,7 +7,7 @@
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public bool IsPrivate { get; set; }
-        public bool isActive { get; set; } = true;
+        public bool IsReadyToPlay { get; set; }
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
         public string Address { get; set; } = "";

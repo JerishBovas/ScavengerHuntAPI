@@ -14,7 +14,7 @@ namespace ScavengerHunt.Models
         public int GameDuration {get; set; }
         public List<Item> ItemsLeftToFind { get; set; } = new();
         public int Score { get; set; } = 0;
-        public DateTimeOffset StartTime { get; set; }
-        public DateTimeOffset? EndTime { get; set; }
+        public DateTimeOffset StartTime { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset? EndTime { get; set; } = null;
     }
 }

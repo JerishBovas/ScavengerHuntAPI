@@ -29,16 +29,28 @@ namespace ScavengerHunt.Controllers
         }
 
         // GET: api/team
-        [Authorize]
-        [HttpGet]
-        public async Task<ActionResult<List<TeamDto>>> Get()
+        [Authorize, HttpGet]
+        public async Task<ActionResult<List<TeamDto>>> Get([FromQuery]string category = "all", [FromQuery]int index = 0, [FromQuery]int count = 10)
         {
             try
             {
+                var userId = helpService.GetCurrentUserId(HttpContext) ?? Guid.Empty;
                 var teams = await teamRepo.GetAllAsync();
                 teams.RemoveAll(g => g.IsOpen == false);
                 
-                return mapper.Map<List<TeamDto>>(teams);
+                if(category == "user")
+                {
+                    teams.RemoveAll(g => g.AdminId != userId);
+                }
+                else if(category == "other")
+                {
+                    teams.RemoveAll(g => g.AdminId == userId);
+                }
+
+                if(index >= teams.Count) return new List<TeamDto>();
+                var shortTeams = teams.GetRange(index, count > teams.Count - index ? teams.Count - index : count);
+
+                return mapper.Map<List<TeamDto>>(shortTeams);
             }
             catch (Exception e)
             {
@@ -48,8 +60,7 @@ namespace ScavengerHunt.Controllers
         }
 
         // GET api/team/5
-        [Authorize]
-        [HttpGet("{id}")]
+        [Authorize, HttpGet("{id}")]
         public async Task<ActionResult<TeamDto>> Get(Guid id)
         {
             try
@@ -67,8 +78,7 @@ namespace ScavengerHunt.Controllers
         }
 
         // POST api/team
-        [Authorize]
-        [HttpPost]
+        [Authorize, HttpPost]
         public async Task<ActionResult> Create([FromBody] TeamCreateDto res)
         {
             try
@@ -76,14 +86,10 @@ namespace ScavengerHunt.Controllers
                 var user = await helpService.GetCurrentUser(HttpContext);
                 if (user == null) { return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"})); }
 
-                Team newgrp = new()
-                {
-                    AdminId = user.Id,
-                    IsOpen = res.IsOpen,
-                    Title = res.Title,
-                    Description = res.Description,
-                    TeamIcon = res.TeamIcon,
-                };
+                Team newgrp = mapper.Map<Team>(res);
+                newgrp.AdminId = user.Id;
+                newgrp.Members.Add(user.Id.ToString());
+                user.Teams.Add(newgrp.Id.ToString());
 
                 await teamRepo.CreateAsync(newgrp);
                 await teamRepo.SaveChangesAsync();
@@ -98,8 +104,7 @@ namespace ScavengerHunt.Controllers
         }
 
         // PUT api/team/5
-        [Authorize]
-        [HttpPut("{id}")]
+        [Authorize, HttpPut("{id}")]
         public async Task<ActionResult> Update(Guid id, [FromBody] TeamCreateDto res)
         {
             try
@@ -107,20 +112,11 @@ namespace ScavengerHunt.Controllers
                 var user = await helpService.GetCurrentUser(HttpContext);
                 if (user == null) { return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"})); }
 
-                var grp = await teamRepo.GetAsync(user.Id, id);
+                var grp = await teamRepo.GetAsync(id, user.Id);
                 if (grp == null){return NotFound(new CustomError("Login Error", 404, new string[]{"Team doesn't exist"}));}
 
-                Team newgrp = grp with
-                {
-                    IsOpen = res.IsOpen,
-                    Title = res.Title,
-                    Description = res.Description,
-                    TeamIcon = res.TeamIcon
-                };
-
-                teamRepo.UpdateAsync(newgrp);
+                grp = mapper.Map<TeamCreateDto, Team>(res, grp);
                 await teamRepo.SaveChangesAsync();
-
                 return Ok();
             }
             catch (Exception e)
@@ -130,9 +126,8 @@ namespace ScavengerHunt.Controllers
             }
         }
 
-        [Authorize]
-        [HttpPut("image")]
-        public async Task<ActionResult> UploadImage([FromForm] ImageForm file)
+        [Authorize, HttpPut("{id}/image")]
+        public async Task<ActionResult> UploadImage(Guid id, [FromForm] ImageForm file)
         {
             try
             {
@@ -146,6 +141,12 @@ namespace ScavengerHunt.Controllers
 
                 string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString();
                 string url = await blobService.UploadImage("teams", name, file.ImageFile.OpenReadStream());
+
+                var grp = await teamRepo.GetAsync(id, user.Id);
+                if (grp == null){return NotFound(new CustomError("Login Error", 404, new string[]{"Team doesn't exist"}));}
+
+                grp.TeamIcon = url;
+                await teamRepo.SaveChangesAsync();
                 return Created(url, new {ImagePath = url});
             }
             catch (Exception e)
@@ -156,8 +157,7 @@ namespace ScavengerHunt.Controllers
         }
 
         // DELETE api/team/5
-        [Authorize]
-        [HttpDelete("{id}")]
+        [Authorize, HttpDelete("{id}")]
         public async Task<ActionResult> Delete(Guid id)
         {
             try
@@ -165,12 +165,15 @@ namespace ScavengerHunt.Controllers
                 var user = await helpService.GetCurrentUser(HttpContext);
                 if (user is null) { return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"})); }
 
-                var team = await teamRepo.GetByIdAsync(id);
-                if (team is null || team.AdminId != user.Id) { return NotFound(new CustomError("Not Found", 404, new string[]{"Team doesn't exist."})); }
+                var team = await teamRepo.GetAsync(id, user.Id);
+                if (team is null) { return NotFound(new CustomError("Not Found", 404, new string[]{"Team doesn't exist."})); }
+
+                string imageName = team.TeamIcon.Split('/').Last();
 
                 teamRepo.DeleteAsync(team);
+                user.Teams.Remove(team.Id.ToString());
                 await teamRepo.SaveChangesAsync();
-
+                blobService.DeleteImage("teams", imageName);
                 return Ok();
             }
             catch (Exception e)

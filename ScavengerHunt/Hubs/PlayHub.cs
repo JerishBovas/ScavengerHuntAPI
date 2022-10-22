@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.SignalR;
 using ScavengerHunt.DTOs;
 using ScavengerHunt.Models;
@@ -12,61 +13,76 @@ public class PlayHub : Hub
     private readonly IGameService gameService;
     private readonly IUserService userService;
     private readonly IGamePlayService gamePlayService;
+    private readonly IClassificationService classificationService;
     private readonly ILogger<PlayHub> logger;
+    private readonly IMapper mapper;
 
-    public PlayHub(IGameService gameService, IUserService userService, ILogger<PlayHub> logger, IGamePlayService gamePlayService)
+    public PlayHub(IGameService gameService, IUserService userService, ILogger<PlayHub> logger, IGamePlayService gamePlayService, IMapper mapper, IClassificationService classificationService)
     {
         this.gameService = gameService;
         this.userService = userService;
         this.gamePlayService = gamePlayService;
+        this.classificationService = classificationService;
         this.logger = logger;
+        this.mapper = mapper;
     }
 
     public async Task StartGame(Guid gameId)
     {
-        if (Guid.TryParse(Context.UserIdentifier, out Guid userId))
+        try
         {
+            bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid userId);
+            if(!didParse) {await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
+
             var game = await gameService.GetAsync(gameId, userId);
             if (game is null) { await Clients.Caller.SendAsync("Error", "Game not found!"); return; }
-            GamePlay score = new()
-            {
-                UserId = userId,
-                GameEnded = false,
-                GameId = gameId,
-                GameName = game.Name,
-                NoOfItems = game.Items.Count,
-                ItemsLeftToFind = new(),
-                Score = 0,
-                StartTime = DateTimeOffset.Now,
-                EndTime = null
-            };
 
-            try
+            if(!game.IsReadyToPlay)
             {
-                await gamePlayService.CreateAsync(score);
-                await gamePlayService.SaveChangesAsync();
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e.Message);
+                await Clients.Caller.SendAsync("Error", "Game under maintenance. Please try again later.");
                 return;
             }
 
-            GamePlayDto scoreDto = new()
+            GamePlay score = new()
             {
-                Id = score.Id,
-                GameId = score.GameId,
-                GameName = score.GameName,
-                NoOfItems = score.NoOfItems,
-                Score = score.Score,
-                StartTime = score.StartTime,
-                EndTime = score.EndTime
+                GameId = gameId,
+                UserId = userId,
+                GameName = game.Name,
+                NoOfItems = game.Items.Count,
+                ItemsLeftToFind = game.Items.ToList()
             };
-            await Clients.Caller.SendAsync("StartGame", scoreDto);
+
+            await gamePlayService.CreateAsync(score);
+            await gamePlayService.SaveChangesAsync();
+            await Clients.Caller.SendAsync("StartGame", mapper.Map<GamePlay, GamePlayDto>(score));
         }
-        else
+        catch (Exception e)
         {
-            await Clients.Caller.SendAsync("Error", "Game not found!");
+            logger.LogError(e.Message);
+            return;
+        }
+    }
+
+    public async Task CheckImage(Guid gamePlayId, string base64Item)
+    {
+        try
+        {
+            bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid userId);
+            if(!didParse) { await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
+
+            var gamePlay = await gamePlayService.GetAsync(gamePlayId, userId);
+            if(gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game not found!"); return;}
+
+            if(gamePlay.StartTime.AddMinutes(gamePlay.GameDuration) < DateTimeOffset.UtcNow)
+            {
+                gamePlay.EndTime = gamePlay.StartTime.AddMinutes(gamePlay.GameDuration);
+                await Clients.Caller.SendAsync("Error", "Game Ended."); return;
+            }
+        }
+        catch(Exception e)
+        {
+            logger.LogError(e.Message);
+            await Clients.Caller.SendAsync("Error", "Internal error occured.");
         }
     }
 

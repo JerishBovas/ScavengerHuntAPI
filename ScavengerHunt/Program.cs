@@ -32,6 +32,7 @@ builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IBlobService, BlobService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddScoped<IHelperService, HelperService>();
+builder.Services.AddScoped<IClassificationService, ClassificationService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -73,6 +74,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+using (var serviceScope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
+{
+    var dbContext = serviceScope.ServiceProvider.GetService<ScavengerHuntContext>();
+ 
+    if(dbContext != null) dbContext.Database.EnsureCreated();
+}
 
 app.UseHttpsRedirection();
 
@@ -82,6 +89,5 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<PlayHub>("/Play");
-app.MapHub<ItemsHub>("/Item");
 
 app.Run();

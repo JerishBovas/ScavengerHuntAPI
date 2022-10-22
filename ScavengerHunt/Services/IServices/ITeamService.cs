@@ -4,7 +4,7 @@ namespace ScavengerHunt.Services
 {
     public interface ITeamService
     {
-        Task<Team?> GetAsync(Guid id, Guid teamId);
+        Task<Team?> GetAsync(Guid id, Guid adminId);
         Task<Team?> GetByIdAsync(Guid id);
         Task<List<Team>> GetAllAsync();
         Task CreateAsync(Team entity);

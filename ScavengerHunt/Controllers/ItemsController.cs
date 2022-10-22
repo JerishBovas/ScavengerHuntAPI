@@ -1,6 +1,8 @@
-﻿using AutoMapper;
+﻿using Amazon.Rekognition.Model;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
@@ -16,15 +18,17 @@ namespace ScavengerHunt.Controllers
         private readonly ILogger<ItemsController> logger;
         private readonly IHelperService helpService;
         private readonly IBlobService blobService;
+        private readonly IClassificationService classificationService;
         private readonly IMapper mapper;
 
-        public ItemsController(IGameService gameRepo, IUserService userRepo, ILogger<ItemsController> logger, IHelperService help, IBlobService blob, IMapper mapper)
+        public ItemsController(IGameService gameRepo, IUserService userRepo, ILogger<ItemsController> logger, IHelperService help, IBlobService blob, IClassificationService classificationService, IMapper mapper)
         {
             this.gameRepo = gameRepo;
             this.userRepo = userRepo;
             this.logger = logger;
             helpService = help;
             blobService = blob;
+            this.classificationService = classificationService;
             this.mapper = mapper;
         }
 
@@ -95,8 +99,12 @@ namespace ScavengerHunt.Controllers
                 var game = await gameRepo.GetAsync(gameId, user.Id);
                 if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found or you don't have access."}));}
 
+                if(game.IsReadyToPlay){return BadRequest(new CustomError("Not Permitted", 404, new string[]{"Operation not permitted. Enter edit mode first and try again."}));}
+
                 var item = mapper.Map<Item>(res);
                 game.Items.Add(item);
+                game.LastUpdated = DateTimeOffset.UtcNow;
+                game.IsReadyToPlay = false;
                 
                 await gameRepo.SaveChangesAsync();
 
@@ -108,42 +116,14 @@ namespace ScavengerHunt.Controllers
             }
         }
 
-        // This method takes id, gameId and itemCreateDto as parameters
-        // And returns OK if update successful
-        // PUT api/Game/5
-        [Authorize]
-        [HttpPut("{id}")]
-        public async Task<ActionResult> Update(Guid id, Guid gameId, [FromBody] ItemCreateDto res)
-        {
-            try
-            {
-                var user = await helpService.GetCurrentUser(HttpContext);
-                if (user == null){return NotFound(new CustomError("Bad Request", 404, new string[]{"User does not exist"}));}
-
-                var game = await gameRepo.GetAsync(gameId, user.Id);
-                if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"}));}
-
-                var item = game.Items.FirstOrDefault(x => x.Id == id);
-                if(item == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested item not found or you don't have access."}));}
-                
-                item = mapper.Map<ItemCreateDto, Item>(res, item);
-                game.LastUpdated = DateTimeOffset.Now;
-                await gameRepo.SaveChangesAsync();
-
-                return Ok();
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e.Message);
-                return StatusCode(503, new CustomError("Internal Server Error", 503, new string[]{"An internal error occured. Please email to jerishbradlyb@gmail.com and we will try to fix it."}));
-            }
-        }
-
         // This method takes imageform as parameter
         // And returns created image url
-        [Authorize, HttpPut("{id}/image")]
-        public async Task<ActionResult> UploadImage(Guid id, Guid gameId, [FromForm] ImageForm file)
+        [Authorize, HttpPut("image")]
+        public async Task<ActionResult<ImageLabels>> UploadAndGetLabels(Guid gameId, [FromForm] ImageForm file)
         {
+            Image image = new Image();
+            ImageLabels imageLabels = new ImageLabels();
+
             try
             {
                 if(file.ImageFile == null) return BadRequest(new CustomError("Invalid Image", 400, new string[]{"Please upload a valid image"}));
@@ -155,18 +135,27 @@ namespace ScavengerHunt.Controllers
                 }
 
                 string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString();
-                string url = await blobService.UploadImage("items", name, file.ImageFile.OpenReadStream());
+                imageLabels.Url = await blobService.UploadImage("items", name, file.ImageFile.OpenReadStream());
                 
-                var game = await gameRepo.GetAsync(gameId, user.Id);
-                if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"}));}
+                using(var ms = new MemoryStream())
+                {
+                    Stream st = file.ImageFile.OpenReadStream();
+                    st.CopyTo(ms);
+                    image.Bytes = ms;
+                }
+                
+                DetectLabelsRequest detectlabelsRequest = new DetectLabelsRequest()
+                {
+                    Image = image,
+                    MaxLabels = 3,
+                    MinConfidence = 90F
+                };
 
-                var item = game.Items.FirstOrDefault(x => x.Id == id);
-                if(item == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested item not found or you don't have access."}));}
-                
-                item.ImageName = url;
-                game.LastUpdated = DateTimeOffset.Now;
-                await gameRepo.SaveChangesAsync();
-                return Created(url, new {ImagePath = url});
+                DetectLabelsResponse response = await classificationService.DetectLabels(detectlabelsRequest);
+
+                imageLabels.Labels = response.Labels;
+
+                return Ok(imageLabels);
             }
             catch (Exception e)
             {
@@ -190,11 +179,15 @@ namespace ScavengerHunt.Controllers
                 var game = await gameRepo.GetAsync(gameId, user.Id);
                 if (game == null || game.UserId != user.Id) { return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"})); }
 
+                if(game.IsReadyToPlay){return BadRequest(new CustomError("Not Permitted", 404, new string[]{"Operation not permitted. Enter edit mode first and try again."}));}
+
                 var item = game.Items.FirstOrDefault(x => x.Id == id);
                 if(item == null) return Ok();
 
                 game.Items.Remove(item);
+                game.LastUpdated = DateTimeOffset.UtcNow;
                 await gameRepo.SaveChangesAsync();
+                blobService.DeleteImage("items", item.ImageName.Split('/').Last());
                 return Ok();
             }
             catch (Exception e)

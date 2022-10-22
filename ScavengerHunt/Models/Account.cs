@@ -13,6 +13,6 @@ namespace ScavengerHunt.Models
         public string PasswordSalt { get; set; } = ""; 
         public string? RefToken { get; set; }
         public DateTime? RefTokenExpiry { get; set; }
-        public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.Now;
+        public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
     }
 }
