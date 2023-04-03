@@ -8,9 +8,11 @@ namespace ScavengerHunt.Models
     {
         public string Email { get; set; } = "";
         public Guid UserId { get; set; }
+        public Guid? AppleId { get; set; }
+        public Guid? GoogleId { get; set; }
+        public string? PasswordHash { get; set; }
+        public string? PasswordSalt { get; set; }
         public string Roles { get; set; } = "User";
-        public string PasswordHash { get; set; } = "";
-        public string PasswordSalt { get; set; } = ""; 
         public string? RefToken { get; set; }
         public DateTime? RefTokenExpiry { get; set; }
         public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;

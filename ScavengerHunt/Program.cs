@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddDbContext<ScavengerHuntContext>(options =>
     options.UseCosmos(
-        builder.Configuration.GetConnectionString("ScavengerHunt_Database"),
+        builder.Configuration.GetConnectionString("ScavengerHunt_Database")!,
         databaseName: builder.Configuration["ScavengerHunt_DATABASE_ID"]
     )
 );
@@ -48,18 +48,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddMvc()
-        .ConfigureApiBehaviorOptions(options =>
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
         {
-            options.InvalidModelStateResponseFactory = context =>
+            var problems = new CustomError(context)
             {
-                var problems = new CustomError(context)
-                {
-                    Title = "Invalid model sent to API",
-                    Status = 400
-                };
-                return new BadRequestObjectResult(problems);
+                Title = "Invalid model sent to API",
+                Status = 400
             };
-        });
+            return new BadRequestObjectResult(problems);
+        };
+    });
 builder.Services.AddControllers();
 builder.Services.AddAutoMapper(typeof(Program));
 

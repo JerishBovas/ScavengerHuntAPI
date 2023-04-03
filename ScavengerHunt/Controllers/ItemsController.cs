@@ -2,14 +2,13 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
 
 namespace ScavengerHunt.Controllers
 {
-    [Route("api/v1/games/{gameId}/[controller]")]
+    [Route("v1/games/{gameId}/[controller]")]
     [ApiController]
     public class ItemsController : ControllerBase
     {
@@ -121,8 +120,9 @@ namespace ScavengerHunt.Controllers
         [Authorize, HttpPut("image")]
         public async Task<ActionResult<ImageLabels>> UploadAndGetLabels(Guid gameId, [FromForm] ImageForm file)
         {
-            Image image = new Image();
+            Amazon.Rekognition.Model.Image image = new Amazon.Rekognition.Model.Image();
             ImageLabels imageLabels = new ImageLabels();
+            imageLabels.Labels = new();
 
             try
             {
@@ -147,13 +147,30 @@ namespace ScavengerHunt.Controllers
                 DetectLabelsRequest detectlabelsRequest = new DetectLabelsRequest()
                 {
                     Image = image,
-                    MaxLabels = 3,
-                    MinConfidence = 90F
+                    MaxLabels = 5,
+                    MinConfidence = 80F
                 };
 
                 DetectLabelsResponse response = await classificationService.DetectLabels(detectlabelsRequest);
 
-                imageLabels.Labels = response.Labels;
+                if(response.Labels.Count > 0)
+                {
+                    foreach(var label in response.Labels)
+                    {
+                        Tag tag = new();
+                        tag.Label = label.Name;
+                        tag.Confidence = label.Confidence;
+                        if(label.Instances.Count > 0)
+                        {
+                            var instance = label.Instances.Single(x => x.Confidence == label.Confidence);
+                            tag.BoundingBox = instance.BoundingBox;
+                        }
+                        else{
+                            continue;
+                        }
+                        imageLabels.Labels.Add(tag);
+                    }
+                }
 
                 return Ok(imageLabels);
             }
@@ -187,7 +204,7 @@ namespace ScavengerHunt.Controllers
                 game.Items.Remove(item);
                 game.LastUpdated = DateTimeOffset.UtcNow;
                 await gameRepo.SaveChangesAsync();
-                blobService.DeleteImage("items", item.ImageName.Split('/').Last());
+                blobService.DeleteImage("items", item.ImageUrl.Split('/').Last());
                 return Ok();
             }
             catch (Exception e)

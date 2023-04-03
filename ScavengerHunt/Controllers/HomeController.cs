@@ -7,7 +7,7 @@ using ScavengerHunt.Services;
 
 namespace ScavengerHunt.Controllers
 {
-    [Route("")]
+    [Route("v1/[controller]")]
     [ApiController]
     public class HomeController : ControllerBase
     {
@@ -33,7 +33,7 @@ namespace ScavengerHunt.Controllers
         }
 
         //Get /leaderboard
-        [AllowAnonymous, HttpGet("api/v1/Home/leaderboard")]
+        [AllowAnonymous, HttpGet("leaderboard")]
         public async Task<ActionResult> GetLeaderBoard()
         {
             try
@@ -54,7 +54,7 @@ namespace ScavengerHunt.Controllers
         }
     
         //Get /populargames
-        [AllowAnonymous, HttpGet("api/v1/Home/PopularGames")]
+        [AllowAnonymous, HttpGet("PopularGames")]
         public async Task<ActionResult> GetPopularGames()
         {
             try
@@ -73,16 +73,6 @@ namespace ScavengerHunt.Controllers
                 logger.LogError(e.Message);
                 return StatusCode(503, new CustomError("Internal Server Error", 503, new string[]{"An internal error occured. Please email to jerishbradlyb@gmail.com and we will try to fix it."}));
             }
-        }
-
-        //GET: /.well-known/apple-app-site-association
-        [AllowAnonymous, HttpGet(".well-known/apple-app-site-association")]
-        public async Task<IActionResult> Index()
-        {
-            return Content(
-                await System.IO.File.ReadAllTextAsync(Path.Combine(_hostingEnvironment.ContentRootPath, configuration["AppleSitePath"])),
-                "text/plain"
-            );
         }
 
         private async Task updateLeaderboard()
