@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
@@ -80,15 +81,27 @@ namespace ScavengerHunt.Controllers
 
         // POST api/Game
         [Authorize, HttpPost]
-        public async Task<ActionResult> Create([FromBody] GameCreateDto res)
+        public async Task<ActionResult> Create()
         {
             try
             {
                 var user = await helpService.GetCurrentUser(HttpContext);
                 if (user == null){return NotFound(new CustomError("Bad Request", 404, new string[]{"User does not exist"}));}
 
-                Game newGame = mapper.Map<Game>(res);
+                var form = await Request.ReadFormAsync();
+                var imageFile = form.Files.GetFile("image");
+                var json = form["json"].ToString();
+
+                if(imageFile == null) return BadRequest(new CustomError("Invalid Image", 400, new string[]{"Please upload a valid image"}));
+                string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString();
+                string url = await blobService.UploadImage("games", name, imageFile.OpenReadStream());
+
+                // Deserialize JSON object
+                if(string.IsNullOrEmpty(json)) return BadRequest(new CustomError("Invalid Image", 400, new string[]{"Please upload a valid image"}));
+                var game = JsonConvert.DeserializeObject<Game>(json);
+                Game newGame = mapper.Map<Game>(game);
                 newGame.UserId = user.Id;
+                newGame.ImageName = url;
                 user.Games.Add(newGame.Id.ToString());
 
                 await gameRepo.CreateAsync(newGame);
