@@ -142,19 +142,30 @@ namespace ScavengerHunt.Controllers
 
         // PUT api/Game/5
         [Authorize, HttpPut("{id}")]
-        public async Task<ActionResult> Update(Guid id, [FromBody] GameCreateDto res)
+        public async Task<ActionResult> Update(Guid id)
         {
             try
             {
                 var user = await helpService.GetCurrentUser(HttpContext);
                 if (user == null){return NotFound(new CustomError("Bad Request", 404, new string[]{"User does not exist"}));}
 
+                var form = await Request.ReadFormAsync();
+                var imageFile = form.Files.GetFile("image");
+                var json = form["json"].ToString();
+
                 var game = await gameRepo.GetAsync(id, user.Id);
                 if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"}));}
 
-                if(game.IsReadyToPlay){return BadRequest(new CustomError("Not Permitted", 404, new string[]{"Operation not permitted. Enter edit mode first and try again."}));}
-                
+                var res = JsonConvert.DeserializeObject<GameCreateDto>(json);
                 game = mapper.Map<GameCreateDto, Game>(res, game);
+
+                if(imageFile != null)
+                {
+                    string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString();
+                    string url = await blobService.UploadImage("games", name, imageFile.OpenReadStream());
+                    game.ImageName = url;
+                }
+                
                 game.LastUpdated = DateTimeOffset.UtcNow;
                 game.IsReadyToPlay = false;
                 await gameRepo.SaveChangesAsync();
