@@ -107,7 +107,7 @@ namespace ScavengerHunt.Controllers
                 await gameRepo.CreateAsync(newGame);
                 await gameRepo.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(Create), new { newGame.Id});
+                return Created(nameof(Create), newGame);
             }catch(Exception e)
             {
                 logger.LogError(e.Message);
@@ -159,7 +159,7 @@ namespace ScavengerHunt.Controllers
                 game.IsReadyToPlay = false;
                 await gameRepo.SaveChangesAsync();
 
-                return Ok();
+                return Ok(game);
             }
             catch (Exception e)
             {
