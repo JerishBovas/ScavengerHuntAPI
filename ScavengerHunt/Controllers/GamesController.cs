@@ -107,7 +107,7 @@ namespace ScavengerHunt.Controllers
                 await gameRepo.CreateAsync(newGame);
                 await gameRepo.SaveChangesAsync();
 
-                return Created(nameof(Create), newGame);
+                return Created(nameof(Create), mapper.Map<GameDto>(newGame));
             }catch(Exception e)
             {
                 logger.LogError(e.Message);
@@ -157,7 +157,7 @@ namespace ScavengerHunt.Controllers
                 if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"}));}
 
                 var res = JsonConvert.DeserializeObject<GameCreateDto>(json);
-                game = mapper.Map<GameCreateDto, Game>(res, game);
+                mapper.Map<GameCreateDto, Game>(res, game);
 
                 if(imageFile != null)
                 {
@@ -170,7 +170,7 @@ namespace ScavengerHunt.Controllers
                 game.IsReadyToPlay = false;
                 await gameRepo.SaveChangesAsync();
 
-                return Ok(game);
+                return Ok(mapper.Map<GameDto>(game));
             }
             catch (Exception e)
             {
