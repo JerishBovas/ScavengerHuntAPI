@@ -11,7 +11,7 @@
         public string Country { get; set; }
         public Guid UserId { get; set; }
         public CoordinateDto Coordinate { get; set; }
-        public int Items { get; set; }
+        public List<string> Items { get; set; }
         public string ImageName { get; set; }
         public int Difficulty { get; set; }
         public Double Ratings { get; set; }

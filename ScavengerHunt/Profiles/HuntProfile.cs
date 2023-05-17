@@ -13,7 +13,8 @@ public class HuntProfile : Profile
         CreateMap<Account, AccountDto>().ReverseMap();
 
         CreateMap<Game, GameDto>().ForMember(dest => dest.Ratings, opt => opt.MapFrom(game => game.Ratings.Count > 0 ? Math.Round(((double)game.Ratings.Sum()/(double)game.Ratings.Count), 1) : 0))
-                                .ForMember(dest => dest.Items, opt => opt.MapFrom(g => g.Items.Count));
+        .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items.Select(item => item.Name).ToList()));
+
         CreateMap<Game, GameDetailDto>().ForMember(dest => dest.Ratings, opt => opt.MapFrom(game => game.Ratings.Count > 0 ? Math.Round(((double)game.Ratings.Sum()/(double)game.Ratings.Count), 1) : 0));
         CreateMap<GameCreateDto, Game>();
 
