@@ -2,6 +2,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using ScavengerHunt.DTOs;
 using ScavengerHunt.Models;
 using ScavengerHunt.Services;
@@ -88,7 +89,7 @@ namespace ScavengerHunt.Controllers
         // And returns created item id
         // POST api/Game
         [Authorize, HttpPost]
-        public async Task<ActionResult> Create([FromBody] ItemCreateDto res, Guid gameId)
+        public async Task<ActionResult> Create(Guid gameId)
         {
             try
             {
@@ -98,16 +99,26 @@ namespace ScavengerHunt.Controllers
                 var game = await gameRepo.GetAsync(gameId, user.Id);
                 if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found or you don't have access."}));}
 
-                if(game.IsReadyToPlay){return BadRequest(new CustomError("Not Permitted", 404, new string[]{"Operation not permitted. Enter edit mode first and try again."}));}
+                var form = await Request.ReadFormAsync();
+                var imageFile = form.Files.GetFile("image");
+                var json = form["json"].ToString();
 
-                var item = mapper.Map<Item>(res);
+                if(imageFile == null) return BadRequest(new CustomError("Invalid Image", 400, new string[]{"Please upload a valid image"}));
+                string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString();
+                string url = await blobService.UploadImage("items", name, imageFile.OpenReadStream());
+
+                // Deserialize JSON object
+                if(string.IsNullOrEmpty(json)) return BadRequest(new CustomError("Invalid Image", 400, new string[]{"Please upload a valid image"}));
+                var item = JsonConvert.DeserializeObject<Item>(json);
+                if(item == null) return BadRequest(new CustomError("Invalid Data", 400, new string[]{"Please check your values"}));
+
                 game.Items.Add(item);
                 game.LastUpdated = DateTimeOffset.UtcNow;
                 game.IsReadyToPlay = false;
                 
                 await gameRepo.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(Create), new { item.Id});
+                return CreatedAtAction(nameof(Create), new { item});
             }catch(Exception e)
             {
                 logger.LogError(e.Message);

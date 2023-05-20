@@ -7,9 +7,6 @@ namespace ScavengerHunt.Models
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = "";
-        public string Description { get; set; } = "";
         public string ImageUrl { get; set; } = "";
-        public string Label { get; set; } = "";
-        public BoundingBox BoundingBox { get; set; } = new();
     }
 }
