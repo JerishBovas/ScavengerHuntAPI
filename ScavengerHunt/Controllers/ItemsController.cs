@@ -104,7 +104,7 @@ namespace ScavengerHunt.Controllers
                 var json = form["json"].ToString();
 
                 if(imageFile == null) return BadRequest(new CustomError("Invalid Image", 400, new string[]{"Please upload a valid image"}));
-                string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString();
+                string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString() + ".jpeg";
                 string url = await blobService.UploadImage("items", name, imageFile.OpenReadStream());
 
                 // Deserialize JSON object
@@ -124,7 +124,7 @@ namespace ScavengerHunt.Controllers
                 
                 await gameRepo.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(Create), new { item});
+                return CreatedAtAction(nameof(Create), new { newItem});
             }catch(Exception e)
             {
                 logger.LogError(e.Message);
