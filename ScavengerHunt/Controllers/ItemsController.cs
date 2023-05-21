@@ -124,7 +124,7 @@ namespace ScavengerHunt.Controllers
                 
                 await gameRepo.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(Create), new { newItem});
+                return CreatedAtAction(nameof(Create), newItem);
             }catch(Exception e)
             {
                 logger.LogError(e.Message);
