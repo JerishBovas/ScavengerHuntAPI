@@ -66,9 +66,8 @@ namespace ScavengerHunt.Controllers
         {
             try
             {
-                var userId = helpService.GetCurrentUserId(HttpContext) ?? Guid.Empty;
-                var game = await gameRepo.GetAsync(id, userId);
-                if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found or you don't have access."}));}
+                var game = await gameRepo.GetByIdAsync(id);
+                if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found."}));}
 
                 return mapper.Map<GameDetailDto>(game);
             }
