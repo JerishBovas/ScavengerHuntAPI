@@ -62,16 +62,17 @@ namespace ScavengerHunt.Controllers
 
         // GET api/Game/5
         [Authorize, HttpGet("{id}")]
-        public async Task<ActionResult<GameDetailDto>> Get(Guid id)
+        public async Task<ActionResult<GameDetailDto>> Get(Guid id, [FromQuery]Guid userId)
         {
             try
             {
-                var userId = helpService.GetCurrentUserId(HttpContext) ?? Guid.Empty;
-                var game = await gameRepo.GetByIdAsync(id);
+                var currentUserId = helpService.GetCurrentUserId(HttpContext) ?? Guid.Empty;
+                var game = await gameRepo.GetAsync(id, userId);
                 if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found."}));}
+                if(game.IsPrivate && game.UserId != currentUserId){return NotFound(new CustomError("Not Found", 404, new string[]{"You don't have access to the game."}));}
 
                 var gameDto = mapper.Map<GameDetailDto>(game);
-                gameDto.IsUser = userId == gameDto.UserId ? true : false;
+                gameDto.IsUser = currentUserId == gameDto.UserId ? true : false;
                 return gameDto;
             }
             catch(Exception e)
