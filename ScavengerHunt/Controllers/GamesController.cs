@@ -66,10 +66,13 @@ namespace ScavengerHunt.Controllers
         {
             try
             {
+                var userId = helpService.GetCurrentUserId(HttpContext) ?? Guid.Empty;
                 var game = await gameRepo.GetByIdAsync(id);
                 if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found."}));}
 
-                return mapper.Map<GameDetailDto>(game);
+                var gameDto = mapper.Map<GameDetailDto>(game);
+                gameDto.IsUser = userId == gameDto.UserId ? true : false;
+                return gameDto;
             }
             catch(Exception e)
             {

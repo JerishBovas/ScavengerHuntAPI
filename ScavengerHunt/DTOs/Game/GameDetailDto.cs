@@ -10,6 +10,7 @@
         public string Address { get; set; }
         public string Country { get; set; }
         public Guid UserId { get; set; }
+        public bool IsUser { get; set; }
         public CoordinateDto Coordinate { get; set; }
         public ICollection<ItemDto> Items { get; set; }
         public string ImageName { get; set; }
