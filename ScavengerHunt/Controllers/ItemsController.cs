@@ -110,7 +110,6 @@ namespace ScavengerHunt.Controllers
                 // Deserialize JSON object
                 if(string.IsNullOrEmpty(json)) return BadRequest(new CustomError("Invalid Image", 400, new string[]{"Please upload a valid image"}));
                 var item = JsonConvert.DeserializeObject<ItemDto>(json);
-                if(item == null) return BadRequest(new CustomError("Invalid Data", 400, new string[]{"Please check your values"}));
 
                 Item newItem = new Item{
                     Id = Guid.NewGuid(),
