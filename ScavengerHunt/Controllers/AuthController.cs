@@ -48,6 +48,7 @@ public class AuthController : ControllerBase
             var user = new User
             {
                 Name = request.Name,
+                Email = request.Email.ToLower(),
                 Score = 0,
                 Games = new(),
                 Teams = new(),

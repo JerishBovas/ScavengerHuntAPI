@@ -6,6 +6,7 @@ namespace ScavengerHunt.Models
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
         public string ProfileImage { get; set; } = "";
         public int Score { get; set; }
         public List<string> Games { get; set; } = new();
