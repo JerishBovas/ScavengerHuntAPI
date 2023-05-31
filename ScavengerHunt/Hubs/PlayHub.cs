@@ -86,10 +86,22 @@ public class PlayHub : Hub
         }
     }
 
-    public async Task VerifyItem()
+    public async Task<bool> GameStatus(string gameId, string userId)
     {
-        Console.WriteLine("Item Verified");
-        logger.LogInformation("Item Verified");
-        await Clients.Caller.SendAsync("VerifyItem", Context.UserIdentifier?.ToString());
+        bool didParseGameId = Guid.TryParse(gameId, out Guid parsedGameId);
+        if(!didParseGameId) { return false;}
+
+        bool didParseUserId = Guid.TryParse(userId, out Guid parsedUserId);
+        if(!didParseUserId) { return false;}
+
+        bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid realUserId);
+        if(!didParse) { return false;}
+
+        var game = await gameService.GetAsync(parsedGameId, parsedUserId);
+        if (game is null) { return false; }
+
+        if(game.IsPrivate && game.UserId != realUserId){return false;}
+
+        return true;
     }
 }
