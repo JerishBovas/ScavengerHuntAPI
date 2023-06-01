@@ -79,7 +79,7 @@ public class PlayHub : Hub
         }
     }
 
-    public async Task<GamePlayDto?> StopGame(Guid gamePlayId)
+    public async Task<GamePlayDto?> EndGame(Guid gamePlayId)
     {
         try
         {
