@@ -47,7 +47,6 @@ public class PlayHub : Hub
                 UserId = userId,
                 Coordinate = game.Coordinate,
                 Items = game.Items.ToList(),
-                ItemsLeftToFind = game.Items.ToList(),
                 GameDuration = game.GameDuration,
                 StartTime = DateTimeOffset.UtcNow,
                 Deadline = DateTimeOffset.UtcNow.AddMinutes(game.GameDuration)
@@ -64,7 +63,7 @@ public class PlayHub : Hub
         }
     }
 
-    public async Task<GamePlayDto?> VerifyImage(ImageData imageData)
+    public async Task<VerifiedItemDto?> VerifyImage(ImageData imageData)
     {
         try
         {
@@ -86,7 +85,7 @@ public class PlayHub : Hub
                 gamePlay.GameEnded = true;
                 await gamePlayService.SaveChangesAsync();
                 await Clients.Caller.SendAsync("Error", "Game Ended."); 
-                return mapper.Map<GamePlayDto>(gamePlay);
+                return new VerifiedItemDto(gamePlay.GameEnded, null, gamePlay.Score);
             }
 
             var item = gamePlay.Items.First(x => x.Id == itemId);
@@ -96,12 +95,12 @@ public class PlayHub : Hub
 
             if(AreResultsSimilar(result1, result2))
             {
-                gamePlay.ItemsLeftToFind.Remove(item);
+                gamePlay.ItemsFound.Add(item.Id.ToString());
                 gamePlay.Score += 10;
                 await gamePlayService.SaveChangesAsync();
-                return mapper.Map<GamePlayDto>(gamePlay);
+                return new VerifiedItemDto(gamePlay.GameEnded, item.Id, gamePlay.Score);
             }
-            return mapper.Map<GamePlayDto>(gamePlay);
+            return new VerifiedItemDto(gamePlay.GameEnded, null, gamePlay.Score);
         }
         catch(Exception e)
         {

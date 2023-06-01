@@ -14,7 +14,7 @@ namespace ScavengerHunt.Models
         public Guid UserId { get; set; }
         public Coordinate Coordinate { get; set; } = new Coordinate();
         public List<Item> Items { get; set; } = new();
-        public List<Item> ItemsLeftToFind { get; set; } = new();
+        public List<String> ItemsFound { get; set; } = new();
         public int GameDuration {get; set; }
         public int Score { get; set; } = 0;
         public DateTimeOffset StartTime { get; set; } = DateTimeOffset.UtcNow;
