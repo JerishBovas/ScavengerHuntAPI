@@ -58,7 +58,10 @@ public class PlayHub : Hub
                 Address = game.Address,
                 Country = game.Country,
                 UserId = userId,
-                Coordinate = game.Coordinate,
+                Coordinate = new Coordinate{
+                    Latitude = game.Coordinate.Latitude, 
+                    Longitude = game.Coordinate.Longitude
+                },
                 Items = items,
                 GameDuration = game.GameDuration,
                 StartTime = DateTimeOffset.UtcNow,
@@ -68,6 +71,28 @@ public class PlayHub : Hub
             await gamePlayService.CreateAsync(play);
             await gamePlayService.SaveChangesAsync();
             return mapper.Map<GamePlayDto>(play);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e.Message);
+            return null;
+        }
+    }
+
+    public async Task<GamePlayDto?> StopGame(Guid gamePlayId)
+    {
+        try
+        {
+            bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid userId);
+            if(!didParse) {await Clients.Caller.SendAsync("Error", "You are not authorized!"); return null;}
+
+            var gamePlay = await gamePlayService.GetAsync(gamePlayId, userId);
+            if (gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game Play not found!"); return null; }
+
+            gamePlay.GameEnded = true;
+            gamePlay.EndTime = DateTimeOffset.UtcNow;
+            await gamePlayService.SaveChangesAsync();
+            return mapper.Map<GamePlayDto>(gamePlay);
         }
         catch (Exception e)
         {
