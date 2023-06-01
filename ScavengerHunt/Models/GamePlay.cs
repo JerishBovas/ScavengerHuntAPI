@@ -8,13 +8,17 @@ namespace ScavengerHunt.Models
         public Guid Id { get; set; } = Guid.NewGuid();
         public bool GameEnded { get; set; } = false;
         public Guid GameId { get; set; }
+        public string Name { get; set; } = "";
+        public string Address { get; set; } = "";
+        public string Country { get; set; } = "";
         public Guid UserId { get; set; }
-        public string GameName { get; set; } = "";
-        public int NoOfItems { get; set; }
-        public int GameDuration {get; set; }
+        public Coordinate Coordinate { get; set; } = new Coordinate();
+        public List<Item> Items { get; set; } = new();
         public List<Item> ItemsLeftToFind { get; set; } = new();
+        public int GameDuration {get; set; }
         public int Score { get; set; } = 0;
         public DateTimeOffset StartTime { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset Deadline { get; set; } = DateTimeOffset.UtcNow.AddMinutes(15);
         public DateTimeOffset? EndTime { get; set; } = null;
     }
 }

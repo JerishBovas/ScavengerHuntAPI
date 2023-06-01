@@ -1,20 +1,28 @@
-using Amazon.Rekognition;
-using Amazon.Rekognition.Model;
+using Microsoft.Azure.CognitiveServices.Vision.ComputerVision;
+using Microsoft.Azure.CognitiveServices.Vision.ComputerVision.Models;
 
 namespace ScavengerHunt.Services;
 public class ClassificationService : IClassificationService
 {
     private readonly IConfiguration configuration;
-    private readonly AmazonRekognitionClient rekognitionClient;
+    private readonly ComputerVisionClient client;
 
     public ClassificationService(IConfiguration configuration)
     {
         this.configuration = configuration;
-        rekognitionClient = new AmazonRekognitionClient(configuration["AWS:AccessKeyId"], configuration["AWS:SecretAccessKey"], Amazon.RegionEndpoint.USEast2);
+        client = new ComputerVisionClient(new ApiKeyServiceClientCredentials(configuration["VISION_KEY"]))
+        {
+            Endpoint = configuration["VISION_ENDPOINT"]
+        };
     }
 
-    public async Task<DetectLabelsResponse> DetectLabels(DetectLabelsRequest detectlabelsRequest)
+    public async Task<ImageAnalysis> AnalyzeImageInStreamAsync(Stream image, List<VisualFeatureTypes?>? visualFeatureTypes)
     {
-        return await rekognitionClient.DetectLabelsAsync(detectlabelsRequest);
+        return await client.AnalyzeImageInStreamAsync(image, visualFeatureTypes);
+    }
+
+    public async Task<ImageAnalysis> AnalyzeImageAsync(string imageUrl, List<VisualFeatureTypes?>? visualFeatureTypes)
+    {
+        return await client.AnalyzeImageAsync(imageUrl, visualFeatureTypes);
     }
 }
