@@ -37,7 +37,20 @@ public class PlayHub : Hub
 
             var game = await gameService.GetAsync(gameId, gameUserId);
             if (game is null) { await Clients.Caller.SendAsync("Error", "Game not found!"); return null; }
+            
+            List<Item> items = new List<Item>();
 
+            foreach (var gameItem in game.Items)
+            {
+                var clonedItem = new Item
+                {
+                    Id = gameItem.Id,
+                    Name = gameItem.Name,
+                    ImageUrl = gameItem.ImageUrl
+                };
+
+                items.Add(clonedItem);
+            }
             GamePlay play = new()
             {
                 GameId = gameId,
@@ -46,7 +59,7 @@ public class PlayHub : Hub
                 Country = game.Country,
                 UserId = userId,
                 Coordinate = game.Coordinate,
-                Items = game.Items.ToList(),
+                Items = items,
                 GameDuration = game.GameDuration,
                 StartTime = DateTimeOffset.UtcNow,
                 Deadline = DateTimeOffset.UtcNow.AddMinutes(game.GameDuration)
