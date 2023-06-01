@@ -28,15 +28,15 @@ public class PlayHub : Hub
         this.mapper = mapper;
     }
 
-    public async Task<GamePlayDto?> StartGame(Guid gameId, Guid gameUserId)
+    public async Task StartGame(Guid gameId, Guid gameUserId)
     {
         try
         {
             bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid userId);
-            if(!didParse) {await Clients.Caller.SendAsync("Error", "You are not authorized!"); return null;}
+            if(!didParse) {await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
 
             var game = await gameService.GetAsync(gameId, gameUserId);
-            if (game is null) { await Clients.Caller.SendAsync("Error", "Game not found!"); return null; }
+            if (game is null) { await Clients.Caller.SendAsync("Error", "Game not found!"); return; }
             
             List<Item> items = new List<Item>();
 
@@ -70,52 +70,54 @@ public class PlayHub : Hub
 
             await gamePlayService.CreateAsync(play);
             await gamePlayService.SaveChangesAsync();
-            return mapper.Map<GamePlayDto>(play);
+            await Clients.Caller.SendAsync("StartGame", mapper.Map<GamePlayDto>(play));
         }
         catch (Exception e)
         {
             logger.LogError(e.Message);
-            return null;
+            await Clients.Caller.SendAsync("Error", e.Message);
+            return;
         }
     }
 
-    public async Task<GamePlayDto?> EndGame(Guid gamePlayId)
+    public async Task EndGame(Guid gamePlayId)
     {
         try
         {
             bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid userId);
-            if(!didParse) {await Clients.Caller.SendAsync("Error", "You are not authorized!"); return null;}
+            if(!didParse) {await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
 
             var gamePlay = await gamePlayService.GetAsync(gamePlayId, userId);
-            if (gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game Play not found!"); return null; }
+            if (gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game Play not found!"); return; }
 
             gamePlay.GameEnded = true;
             gamePlay.EndTime = DateTimeOffset.UtcNow;
             await gamePlayService.SaveChangesAsync();
-            return mapper.Map<GamePlayDto>(gamePlay);
+            await Clients.Caller.SendAsync("EndGame", mapper.Map<GamePlayDto>(gamePlay));
         }
         catch (Exception e)
         {
             logger.LogError(e.Message);
-            return null;
+            await Clients.Caller.SendAsync("Error", e.Message);
+            return;
         }
     }
 
-    public async Task<VerifiedItemDto?> VerifyImage(ImageData imageData)
+    public async Task VerifyImage(ImageData imageData)
     {
         try
         {
             bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid userId);
-            if(!didParse) { await Clients.Caller.SendAsync("Error", "You are not authorized!"); return null;}
+            if(!didParse) { await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
 
             bool diditemParse = Guid.TryParse(imageData.ItemId, out Guid itemId);
-            if(!diditemParse) { await Clients.Caller.SendAsync("Error", "You are not authorized!"); return null;}
+            if(!diditemParse) { await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
 
             bool didgameplayParse = Guid.TryParse(imageData.GamePlayId, out Guid gamePlayId);
-            if(!didgameplayParse) { await Clients.Caller.SendAsync("Error", "You are not authorized!"); return null;}
+            if(!didgameplayParse) { await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
 
             var gamePlay = await gamePlayService.GetAsync(gamePlayId, userId);
-            if(gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game Session not found!"); return null;}
+            if(gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game Session not found!"); return;}
 
             if(gamePlay.StartTime.AddMinutes(gamePlay.GameDuration) < DateTimeOffset.UtcNow)
             {
@@ -123,7 +125,7 @@ public class PlayHub : Hub
                 gamePlay.GameEnded = true;
                 await gamePlayService.SaveChangesAsync();
                 await Clients.Caller.SendAsync("Error", "Game Ended."); 
-                return new VerifiedItemDto(gamePlay.GameEnded, null, gamePlay.Score);
+                await Clients.Caller.SendAsync("VerifyImage", new VerifiedItemDto(gamePlay.GameEnded, null, gamePlay.Score));
             }
 
             var item = gamePlay.Items.First(x => x.Id == itemId);
@@ -136,35 +138,37 @@ public class PlayHub : Hub
                 gamePlay.ItemsFound.Add(item.Id.ToString());
                 gamePlay.Score += 10;
                 await gamePlayService.SaveChangesAsync();
-                return new VerifiedItemDto(gamePlay.GameEnded, item.Id, gamePlay.Score);
+                await Clients.Caller.SendAsync("VerifyImage", new VerifiedItemDto(gamePlay.GameEnded, item.Id, gamePlay.Score));
             }
-            return new VerifiedItemDto(gamePlay.GameEnded, null, gamePlay.Score);
+            await Clients.Caller.SendAsync("VerifyImage", new VerifiedItemDto(gamePlay.GameEnded, null, gamePlay.Score));
         }
         catch(Exception e)
         {
             logger.LogError(e.Message);
             await Clients.Caller.SendAsync("Error", "Internal error occured.");
-            return null;
+            return;
         }
     }
 
-    public async Task<bool> GameStatus(string gameId, string userId)
+    public async Task GameStatus(string gameId, string userId)
     {
         bool didParseGameId = Guid.TryParse(gameId, out Guid parsedGameId);
-        if(!didParseGameId) { return false;}
+        if(!didParseGameId) { await Clients.Caller.SendAsync("GameStatus", false); return;}
 
         bool didParseUserId = Guid.TryParse(userId, out Guid parsedUserId);
-        if(!didParseUserId) { return false;}
+        if(!didParseUserId) { await Clients.Caller.SendAsync("GameStatus", false); return;}
 
         bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid realUserId);
-        if(!didParse) { return false;}
+        if(!didParse) { await Clients.Caller.SendAsync("GameStatus", false); return;}
 
         var game = await gameService.GetAsync(parsedGameId, parsedUserId);
-        if (game is null) { return false; }
+        if (game is null) { 
+            await Clients.Caller.SendAsync("GameStatus", false);
+            return; }
 
-        if(game.IsPrivate && game.UserId != realUserId){return false;}
+        if(game.IsPrivate && game.UserId != realUserId){await Clients.Caller.SendAsync("GameStatus", false); return;}
 
-        return true;
+        await Clients.Caller.SendAsync("GameStatus", true);
     }
 
     private async Task<ImageAnalysis> AnalyzeImageURL(string url)
