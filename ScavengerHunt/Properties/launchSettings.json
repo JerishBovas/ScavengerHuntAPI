@@ -1,18 +1,9 @@
 {
-  "$schema": "https://json.schemastore.org/launchsettings.json",
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:41911",
-      "sslPort": 44362
-    }
-  },
   "profiles": {
     "ScavengerHunt": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "http://localhost:44987",
+      "applicationUrl": "http://192.168.2.149:5190",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

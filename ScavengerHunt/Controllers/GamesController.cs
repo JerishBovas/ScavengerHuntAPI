@@ -82,6 +82,30 @@ namespace ScavengerHunt.Controllers
             }
         }
 
+        // // POST api/Game
+        // [Authorize, HttpPost]
+        // public async Task<ActionResult> Create([FromBody] GameCreateDto res)
+        // {
+        //     try
+        //     {
+        //         var user = await helpService.GetCurrentUser(HttpContext);
+        //         if (user == null){return NotFound(new CustomError("Bad Request", 404, new string[]{"User does not exist"}));}
+
+        //         Game newGame = mapper.Map<Game>(res);
+        //         newGame.UserId = user.Id;
+        //         user.Games.Add(newGame.Id.ToString());
+
+        //         await gameRepo.CreateAsync(newGame);
+        //         await gameRepo.SaveChangesAsync();
+
+        //         return CreatedAtAction(nameof(Create), new { newGame.Id});
+        //     }catch(Exception e)
+        //     {
+        //         logger.LogError(e.Message);
+        //         return StatusCode(503, new CustomError("Internal Server Error", 503, new string[]{"An internal error occured. Please email to jerishbradlyb@gmail.com and we will try to fix it."}));
+        //     }
+        // }
+
         // POST api/Game
         [Authorize, HttpPost]
         public async Task<ActionResult> Create()

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AutoMapper;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Azure.CognitiveServices.Vision.ComputerVision.Models;
@@ -103,18 +104,22 @@ public class PlayHub : Hub
         }
     }
 
-    public async Task VerifyImage(ImageData imageData)
+    public async Task VerifyImage(string jsonImageData)
     {
         try
         {
-            bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid userId);
-            if(!didParse) { await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
-
-            bool diditemParse = Guid.TryParse(imageData.ItemId, out Guid itemId);
-            if(!diditemParse) { await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
-
-            bool didgameplayParse = Guid.TryParse(imageData.GamePlayId, out Guid gamePlayId);
-            if(!didgameplayParse) { await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
+            var imageData = JsonSerializer.Deserialize<ImageData>(jsonImageData);
+            if(imageData == null){
+                await Clients.Caller.SendAsync("Error", "Data not in correct format.");
+                return;
+            }
+            if (!Guid.TryParse(Context.UserIdentifier, out Guid userId) || 
+                !Guid.TryParse(imageData.ItemId, out Guid itemId) || 
+                !Guid.TryParse(imageData.GamePlayId, out Guid gamePlayId))
+            {
+                await Clients.Caller.SendAsync("Error", "You are not authorized!");
+                return;
+            }
 
             var gamePlay = await gamePlayService.GetAsync(gamePlayId, userId);
             if(gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game Session not found!"); return;}
@@ -128,9 +133,14 @@ public class PlayHub : Hub
                 await Clients.Caller.SendAsync("VerifyImage", new VerifiedItemDto(gamePlay.GameEnded, null, gamePlay.Score));
             }
 
-            var item = gamePlay.Items.First(x => x.Id == itemId);
+            var item = gamePlay.Items.FirstOrDefault(x => x.Id == itemId);
+            if (item == null)
+            {
+                await Clients.Caller.SendAsync("Error", "Item not found!");
+                return;
+            }
 
-            ImageAnalysis result1 = await AnalyzeImageStream(imageData.ImageBytes);
+            ImageAnalysis result1 = await AnalyzeImageStream(Convert.FromBase64String(imageData.ImageString));
             ImageAnalysis result2 = await AnalyzeImageURL(item.ImageUrl);
 
             if(AreResultsSimilar(result1, result2))
@@ -145,21 +155,18 @@ public class PlayHub : Hub
         catch(Exception e)
         {
             logger.LogError(e.Message);
-            await Clients.Caller.SendAsync("Error", "Internal error occured.");
+            await Clients.Caller.SendAsync("Error", e.Message);
             return;
         }
     }
 
     public async Task GameStatus(string gameId, string userId)
     {
-        bool didParseGameId = Guid.TryParse(gameId, out Guid parsedGameId);
-        if(!didParseGameId) { await Clients.Caller.SendAsync("GameStatus", false); return;}
-
-        bool didParseUserId = Guid.TryParse(userId, out Guid parsedUserId);
-        if(!didParseUserId) { await Clients.Caller.SendAsync("GameStatus", false); return;}
-
-        bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid realUserId);
-        if(!didParse) { await Clients.Caller.SendAsync("GameStatus", false); return;}
+        if(!Guid.TryParse(gameId, out Guid parsedGameId) ||
+        !Guid.TryParse(userId, out Guid parsedUserId) ||
+        !Guid.TryParse(Context.UserIdentifier, out Guid realUserId)){
+            await Clients.Caller.SendAsync("GameStatus", false); return;
+        }
 
         var game = await gameService.GetAsync(parsedGameId, parsedUserId);
         if (game is null) { 
@@ -196,12 +203,18 @@ public class PlayHub : Hub
 
     private bool AreResultsSimilar(ImageAnalysis result1, ImageAnalysis result2, float threshold = 0.8f)
     {
-        // Compare labels
-        bool labelsMatch = result1.Description.Tags.SequenceEqual(result2.Description.Tags);
+        // Validate input parameters
+        if (result1 == null || result2 == null)
+        {
+            throw new ArgumentNullException();
+        }
+
+        // Compare labels (case-insensitive)
+        bool labelsMatch = result1.Description.Tags.SequenceEqual(result2.Description.Tags, StringComparer.OrdinalIgnoreCase);
 
         // Compare confidence scores
-        bool confidenceScoresAboveThreshold = result1.Description.Captions.Select(c => c.Confidence).Max() > threshold &&
-            result2.Description.Captions.Select(c => c.Confidence).Max() > threshold;
+        bool confidenceScoresAboveThreshold = result1.Description.Captions.Any(c => c.Confidence > threshold) &&
+            result2.Description.Captions.Any(c => c.Confidence > threshold);
 
         // Combine criteria (e.g., both labels match and confidence scores are above threshold)
         bool isSimilar = labelsMatch && confidenceScoresAboveThreshold;
