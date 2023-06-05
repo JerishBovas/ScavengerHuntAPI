@@ -62,11 +62,10 @@ namespace ScavengerHunt.Controllers
 
         //PUT: /accounts/profileimage
         [Authorize, HttpPut("profileImage")]
-        public async Task<ActionResult> AddImage([FromForm] ImageForm file)
+        public async Task<ActionResult> AddImage()
         {
             try
             {
-                if(file.ImageFile == null) return BadRequest(new CustomError("Invalid Image", 400, new string[]{"Please upload a valid image"}));
 
                 var user = await helpService.GetCurrentUser(HttpContext);
                 if (user == null)
@@ -74,13 +73,18 @@ namespace ScavengerHunt.Controllers
                     return NotFound(new CustomError("Login Error", 404, new string[] { "The User doesn't exist" }));
                 }
 
+                var form = await Request.ReadFormAsync();
+                var imageFile = form.Files.GetFile("image");
+
+                if(imageFile == null) return BadRequest(new CustomError("Invalid Image", 400, new string[]{"Please upload a valid image"}));
+
                 string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString();
-                string url = await blobService.UploadImage("users", name, file.ImageFile.OpenReadStream());
+                string url = await blobService.UploadImage("users", name, imageFile.OpenReadStream());
                 blobService.DeleteImage("users", user.ProfileImage.Split('/').Last());
                 user.ProfileImage = url;
                 
                 await userRepo.SaveChangesAsync();
-                return Created(url, new { ImagePath = user.ProfileImage });
+                return Ok(user);
             }
             catch (Exception e)
             {
@@ -106,7 +110,7 @@ namespace ScavengerHunt.Controllers
                 userRepo.UpdateAsync(user);
                 await userRepo.SaveChangesAsync();
 
-                return Ok();
+                return Ok(user);
             }
             catch (Exception e)
             {

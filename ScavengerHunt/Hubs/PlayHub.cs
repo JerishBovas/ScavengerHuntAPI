@@ -104,22 +104,36 @@ public class PlayHub : Hub
         }
     }
 
-    public async Task VerifyImage(string jsonImageData)
+    public async Task VerifyImage(ImageData imageData)
     {
         try
         {
-            var imageData = JsonSerializer.Deserialize<ImageData>(jsonImageData);
-            if(imageData == null){
-                await Clients.Caller.SendAsync("Error", "Data not in correct format.");
+            logger.LogInformation($"rawItemID: {imageData.ItemId}");
+            logger.LogInformation($"rawGamePlayID: {imageData.GamePlayId}");
+
+            if(!Guid.TryParse(Context.UserIdentifier, out Guid userId)){
+                logger.LogInformation($"userId: {userId}");
+                await Clients.Caller.SendAsync("Error", $"userid: {userId}");
                 return;
             }
-            if (!Guid.TryParse(Context.UserIdentifier, out Guid userId) || 
-                !Guid.TryParse(imageData.ItemId, out Guid itemId) || 
-                !Guid.TryParse(imageData.GamePlayId, out Guid gamePlayId))
-            {
-                await Clients.Caller.SendAsync("Error", "You are not authorized!");
+            if(!Guid.TryParse(imageData.ItemId, out Guid itemId)){
+                logger.LogInformation($"itemID: {itemId}");
+                await Clients.Caller.SendAsync("Error", $"itemId: {itemId}");
                 return;
             }
+            if(!Guid.TryParse(imageData.GamePlayId, out Guid gamePlayId)){
+                logger.LogInformation($"gamePlayId: {gamePlayId}");
+                await Clients.Caller.SendAsync("Error", $"gamePlayId: {gamePlayId}");
+                return;
+            }
+
+            // if (!Guid.TryParse(Context.UserIdentifier, out Guid userId) || 
+            //     !Guid.TryParse(imageData.ItemId, out Guid itemId) || 
+            //     !Guid.TryParse(imageData.GamePlayId, out Guid gamePlayId))
+            // {
+            //     await Clients.Caller.SendAsync("Error", "Internal Error");
+            //     return;
+            // }
 
             var gamePlay = await gamePlayService.GetAsync(gamePlayId, userId);
             if(gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game Session not found!"); return;}

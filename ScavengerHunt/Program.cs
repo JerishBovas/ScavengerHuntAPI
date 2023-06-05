@@ -22,7 +22,10 @@ builder.Services.AddAzureClients(options =>
     options.AddBlobServiceClient(builder.Configuration.GetConnectionString("ScavengerHunt_Storage"));
 });
 builder.Services.AddHttpClient();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options => {
+    options.MaximumParallelInvocationsPerClient = 5;
+    options.MaximumReceiveMessageSize = 256 * 1024;
+});
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IGameService, GameService>();
