@@ -14,7 +14,7 @@ public class HuntProfile : Profile
 
         CreateMap<Game, GameDto>();
 
-        CreateMap<Game, GameDetailDto>().ForMember(dest => dest.Ratings, opt => opt.MapFrom(game => game.Ratings.Count > 0 ? Math.Round(((double)game.Ratings.Sum()/(double)game.Ratings.Count), 1) : 0));
+        CreateMap<Game, GameDetailDto>().ForMember(dest => dest.Ratings, opt => opt.MapFrom(game => game.Ratings.Count > 0 ? Math.Round(((double)game.Ratings.Select(x => x.Value).Sum()/(double)game.Ratings.Count), 1) : 0));
         CreateMap<GameCreateDto, Game>();
 
         CreateMap<GamePlay, GamePlayDto>();

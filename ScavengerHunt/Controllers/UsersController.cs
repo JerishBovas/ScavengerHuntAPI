@@ -84,7 +84,7 @@ namespace ScavengerHunt.Controllers
                 user.ProfileImage = url;
                 
                 await userRepo.SaveChangesAsync();
-                return Ok(user);
+                return Ok(mapper.Map<UserDto>(user));
             }
             catch (Exception e)
             {
@@ -95,7 +95,7 @@ namespace ScavengerHunt.Controllers
 
         //PUT: /accounts/changename
         [Authorize, HttpPut("name")]
-        public async Task<ActionResult> ChangeName(RegisterDto res)
+        public async Task<ActionResult> ChangeName([FromBody] string name)
         {
             try
             {
@@ -105,12 +105,12 @@ namespace ScavengerHunt.Controllers
                     return NotFound(new CustomError("Login Error", 404, new string[] { "The User doesn't exist" }));
                 }
                 
-                user.Name = res.Name;
+                user.Name = name;
 
                 userRepo.UpdateAsync(user);
                 await userRepo.SaveChangesAsync();
 
-                return Ok(user);
+                return Ok(mapper.Map<UserDto>(user));
             }
             catch (Exception e)
             {

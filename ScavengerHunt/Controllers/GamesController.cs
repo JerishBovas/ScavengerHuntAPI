@@ -251,7 +251,7 @@ namespace ScavengerHunt.Controllers
                 var game = await gameRepo.GetAsync(id, user.Id);
                 if (game == null || game.UserId != user.Id) { return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"})); }
 
-                gameRepo.DeleteAsync(game);
+                gameRepo.Delete(game);
                 user.Games.Remove(game.Id.ToString());
                 await gameRepo.SaveChangesAsync();
 

@@ -35,12 +35,12 @@ namespace ScavengerHunt.Services
             await dbSet.AddAsync(entity);
         }
 
-        public void UpdateAsync(Game entity)
+        public void Update(Game entity)
         {
             dbSet.Update(entity);
         }
 
-        public void DeleteAsync(Game entity)
+        public void Delete(Game entity)
         {
             dbSet.Remove(entity);
         }

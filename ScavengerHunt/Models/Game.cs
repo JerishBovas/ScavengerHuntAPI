@@ -17,11 +17,17 @@
         public ICollection<Item> Items { get; set; } = new List<Item>();
         public string ImageName { get; set; } = "";
         public int Difficulty { get; set; } = 0;
-        public List<int> Ratings { get; set; } = new List<int>();
+        public List<Rating> Ratings { get; set; } = new List<Rating>();
         public List<string> Tags { get; set; } = new List<string>();
         public int GameDuration {get; set; }
         public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset LastUpdated { get; set; } = DateTimeOffset.UtcNow;
         public int TimesPlayed { get; set; } = 0;
+    }
+
+    public struct Rating
+    {
+        public Guid UserId { get; set; }
+        public int Value { get; set; }
     }
 }

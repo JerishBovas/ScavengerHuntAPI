@@ -118,6 +118,7 @@ namespace ScavengerHunt.Controllers
                 };
 
                 game.Items.Add(newItem);
+                game.GameDuration += 1;
                 game.LastUpdated = DateTimeOffset.UtcNow;
                 game.IsReadyToPlay = false;
                 

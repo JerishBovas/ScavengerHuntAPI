@@ -55,6 +55,7 @@ public class PlayHub : Hub
             GamePlay play = new()
             {
                 GameId = gameId,
+                GameUserId = game.UserId,
                 Name = game.Name,
                 Address = game.Address,
                 Country = game.Country,
@@ -68,9 +69,11 @@ public class PlayHub : Hub
                 StartTime = DateTimeOffset.UtcNow,
                 Deadline = DateTimeOffset.UtcNow.AddMinutes(game.GameDuration)
             };
+            game.TimesPlayed += 1;
 
             await gamePlayService.CreateAsync(play);
             await gamePlayService.SaveChangesAsync();
+            await gameService.SaveChangesAsync();
             await Clients.Caller.SendAsync("StartGame", mapper.Map<GamePlayDto>(play));
         }
         catch (Exception e)
@@ -108,61 +111,55 @@ public class PlayHub : Hub
     {
         try
         {
-            logger.LogInformation($"rawItemID: {imageData.ItemId}");
-            logger.LogInformation($"rawGamePlayID: {imageData.GamePlayId}");
-
-            if(!Guid.TryParse(Context.UserIdentifier, out Guid userId)){
-                logger.LogInformation($"userId: {userId}");
-                await Clients.Caller.SendAsync("Error", $"userid: {userId}");
-                return;
-            }
-            if(!Guid.TryParse(imageData.ItemId, out Guid itemId)){
-                logger.LogInformation($"itemID: {itemId}");
-                await Clients.Caller.SendAsync("Error", $"itemId: {itemId}");
-                return;
-            }
-            if(!Guid.TryParse(imageData.GamePlayId, out Guid gamePlayId)){
-                logger.LogInformation($"gamePlayId: {gamePlayId}");
-                await Clients.Caller.SendAsync("Error", $"gamePlayId: {gamePlayId}");
+            if (!Guid.TryParse(Context.UserIdentifier, out Guid userId) || 
+                !Guid.TryParse(imageData.ItemId, out Guid itemId) || 
+                !Guid.TryParse(imageData.GamePlayId, out Guid gamePlayId))
+            {
+                await Clients.Caller.SendAsync("Error", "Invalid Information");
                 return;
             }
 
-            // if (!Guid.TryParse(Context.UserIdentifier, out Guid userId) || 
-            //     !Guid.TryParse(imageData.ItemId, out Guid itemId) || 
-            //     !Guid.TryParse(imageData.GamePlayId, out Guid gamePlayId))
-            // {
-            //     await Clients.Caller.SendAsync("Error", "Internal Error");
-            //     return;
-            // }
+            var user = await userService.GetAsync(userId);
+            if(user is null){ await Clients.Caller.SendAsync("Error", "User not found!"); return;}
 
             var gamePlay = await gamePlayService.GetAsync(gamePlayId, userId);
             if(gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game Session not found!"); return;}
 
-            if(gamePlay.StartTime.AddMinutes(gamePlay.GameDuration) < DateTimeOffset.UtcNow)
+            if(gamePlay.Deadline < DateTimeOffset.UtcNow)
             {
                 gamePlay.EndTime = gamePlay.StartTime.AddMinutes(gamePlay.GameDuration);
-                gamePlay.GameEnded = true;
+                gamePlay.GameEnded = true;  
                 await gamePlayService.SaveChangesAsync();
-                await Clients.Caller.SendAsync("Error", "Game Ended."); 
-                await Clients.Caller.SendAsync("VerifyImage", new VerifiedItemDto(gamePlay.GameEnded, null, gamePlay.Score));
+                await EndGame(gamePlay.Id);
+                return;
             }
 
             var item = gamePlay.Items.FirstOrDefault(x => x.Id == itemId);
             if (item == null)
             {
+                logger.LogInformation("Item Not found.");
                 await Clients.Caller.SendAsync("Error", "Item not found!");
                 return;
             }
-
+            
             ImageAnalysis result1 = await AnalyzeImageStream(Convert.FromBase64String(imageData.ImageString));
             ImageAnalysis result2 = await AnalyzeImageURL(item.ImageUrl);
 
             if(AreResultsSimilar(result1, result2))
             {
-                gamePlay.ItemsFound.Add(item.Id.ToString());
-                gamePlay.Score += 10;
+                if(!gamePlay.ItemsFound.Contains(item.Id.ToString()))
+                {
+                    gamePlay.ItemsFound.Add(item.Id.ToString());
+                    gamePlay.Score += 10;
+                    user.Score += 10;
+                }
                 await gamePlayService.SaveChangesAsync();
+                await userService.SaveChangesAsync();
                 await Clients.Caller.SendAsync("VerifyImage", new VerifiedItemDto(gamePlay.GameEnded, item.Id, gamePlay.Score));
+                if(gamePlay.ItemsFound.Count >= gamePlay.Items.Count){
+                    await EndGame(gamePlay.Id);
+                }
+                return;
             }
             await Clients.Caller.SendAsync("VerifyImage", new VerifiedItemDto(gamePlay.GameEnded, null, gamePlay.Score));
         }
@@ -172,6 +169,32 @@ public class PlayHub : Hub
             await Clients.Caller.SendAsync("Error", e.Message);
             return;
         }
+    }
+
+    public async Task AddRating(int rating, string gamePlayId)
+    {
+        if(!Guid.TryParse(gamePlayId, out Guid parsedGamePlayId) || 
+        !Guid.TryParse(Context.UserIdentifier, out Guid userId)){
+            return;
+        }
+
+        var gamePlay  = await gamePlayService.GetAsync(parsedGamePlayId, userId);
+        if(gamePlay is null) { return;}
+
+        var game = await gameService.GetAsync(gamePlay.GameId, gamePlay.GameUserId);
+        if(game is null) { return;}
+
+        var ratings = game.Ratings.FirstOrDefault(x => x.UserId == userId);
+        if(ratings.Equals(default(Rating))){
+            game.Ratings.Add(new Rating{UserId = userId, Value = rating});
+        }else{
+            game.Ratings.Remove(ratings);
+            game.Ratings.Add(new Rating{UserId = userId, Value = rating});
+            logger.LogError("Rating: "+rating);
+            gameService.Update(game);
+        }
+
+        await gameService.SaveChangesAsync();
     }
 
     public async Task GameStatus(string gameId, string userId)
@@ -189,15 +212,15 @@ public class PlayHub : Hub
 
         if(game.IsPrivate && game.UserId != realUserId){await Clients.Caller.SendAsync("GameStatus", false); return;}
 
+        if(game.Items.Count <= 0){ await Clients.Caller.SendAsync("GameStatus", false); return;}
+
         await Clients.Caller.SendAsync("GameStatus", true);
     }
 
     private async Task<ImageAnalysis> AnalyzeImageURL(string url)
     {
         // Analyze the image using Azure Cognitive Services
-        ImageAnalysis result = await classificationService.AnalyzeImageAsync(url, new List<VisualFeatureTypes?> { VisualFeatureTypes.Description,
-            VisualFeatureTypes.Categories,
-            VisualFeatureTypes.Tags });
+        ImageAnalysis result = await classificationService.AnalyzeImageAsync(url, new List<VisualFeatureTypes?> { VisualFeatureTypes.Tags });
 
         return result;
     }
@@ -207,15 +230,13 @@ public class PlayHub : Hub
         using (MemoryStream imageStream = new MemoryStream(imageBytes))
         {
             // Analyze the image using Azure Cognitive Services
-            ImageAnalysis result = await classificationService.AnalyzeImageInStreamAsync(imageStream, new List<VisualFeatureTypes?> { VisualFeatureTypes.Description,
-            VisualFeatureTypes.Categories,
-            VisualFeatureTypes.Tags });
+            ImageAnalysis result = await classificationService.AnalyzeImageInStreamAsync(imageStream, new List<VisualFeatureTypes?> { VisualFeatureTypes.Tags });
 
             return result;
         }
     }
 
-    private bool AreResultsSimilar(ImageAnalysis result1, ImageAnalysis result2, float threshold = 0.8f)
+    private bool AreResultsSimilar(ImageAnalysis result1, ImageAnalysis result2, double confidence = 0.9)
     {
         // Validate input parameters
         if (result1 == null || result2 == null)
@@ -223,16 +244,9 @@ public class PlayHub : Hub
             throw new ArgumentNullException();
         }
 
-        // Compare labels (case-insensitive)
-        bool labelsMatch = result1.Description.Tags.SequenceEqual(result2.Description.Tags, StringComparer.OrdinalIgnoreCase);
+        string[] result1tags = result1.Tags.Where(x => x.Confidence > confidence).Select(x => x.Name).ToArray();
+        string[] result2tags = result2.Tags.Where(x => x.Confidence > confidence).Select(x => x.Name).ToArray();
 
-        // Compare confidence scores
-        bool confidenceScoresAboveThreshold = result1.Description.Captions.Any(c => c.Confidence > threshold) &&
-            result2.Description.Captions.Any(c => c.Confidence > threshold);
-
-        // Combine criteria (e.g., both labels match and confidence scores are above threshold)
-        bool isSimilar = labelsMatch && confidenceScoresAboveThreshold;
-
-        return isSimilar;
+        return result1tags.Any(x => result2tags.Contains(x));
     }
 }
