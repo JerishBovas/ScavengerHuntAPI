@@ -24,7 +24,6 @@ These are the available API endpoints at the time of writing. More coming in the
 | ---------------------------------- | ----------------------------------- |
 | /v1/accounts/all* [GET] | Get all users info |
 | /v1/accounts/* [GET] | Gets user info |
-| /v1/accounts/scores* [GET] | Gets the scores of user |
 | /v1/accounts/profileimage/* [PUT] | Uploads given image to server |
 | /v1/accounts/name* [PUT] | Change user's name |
 | /v1/accounts/{id}* [DELETE] | Delete user account |
