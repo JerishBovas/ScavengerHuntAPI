@@ -1,6 +1,6 @@
 ﻿namespace ScavengerHunt.DTOs
 {
-	public record struct TeamCreateDto
+	public struct TeamCreateDto
 	{
 		public bool IsOpen { get; set; }
 		public string Title { get; set; }

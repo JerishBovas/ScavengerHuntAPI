@@ -3,16 +3,16 @@
 // It holds valuable data about the game like start time endtime
 namespace ScavengerHunt.Models
 {
-    public record GamePlay
+    public class GamePlay
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Id { get; set; } = Guid.NewGuid().ToString();
         public bool GameEnded { get; set; } = false;
-        public Guid GameId { get; set; }
-        public Guid GameUserId { get; set; }
+        public string GameId { get; set; } = Guid.NewGuid().ToString();
+        public string GameUserId { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
         public string Address { get; set; } = "";
         public string Country { get; set; } = "";
-        public Guid UserId { get; set; }
+        public string UserId { get; set; } = Guid.NewGuid().ToString();
         public Coordinate Coordinate { get; set; } = new Coordinate();
         public List<Item> Items { get; set; } = new();
         public List<String> ItemsFound { get; set; } = new();

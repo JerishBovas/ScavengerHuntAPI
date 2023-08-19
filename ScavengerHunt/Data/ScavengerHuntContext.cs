@@ -12,12 +12,6 @@ namespace ScavengerHunt.Data
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<Account>()
-                .HasNoDiscriminator()
-                .ToContainer("Accounts")
-                .HasPartitionKey(nameof(Account.Email))
-                .HasKey(a => a.Email);
-
             builder.Entity<User>()
                 .HasNoDiscriminator()
                 .ToContainer("Users")
@@ -42,7 +36,6 @@ namespace ScavengerHunt.Data
                 .HasKey(da => new{da.Id, da.AdminId});
         }
 
-        public DbSet<Account>? Accounts { get; set; }
         public DbSet<User>? Users { get; set; }
         public DbSet<Game>? Games { get; set; }
         public DbSet<GamePlay>? GamePlays { get; set; }

@@ -4,7 +4,7 @@ namespace ScavengerHunt.Services
 {
     public interface IItemService
     {
-        Task<Item?> GetAsync(Guid gameId, Guid itemId);
+        Task<Item?> GetAsync(string gameId, string itemId);
         Task<List<Item>> GetAllAsync();
         Task CreateAsync(Item entity);
         void UpdateAsync(Item entity);

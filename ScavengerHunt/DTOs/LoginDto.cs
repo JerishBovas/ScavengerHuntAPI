@@ -2,7 +2,7 @@
 
 namespace ScavengerHunt.DTOs
 {
-    public record struct LoginDto
+    public struct LoginDto
     {
         [Required(ErrorMessage = "Email address is required")]
         [StringLength(50)]

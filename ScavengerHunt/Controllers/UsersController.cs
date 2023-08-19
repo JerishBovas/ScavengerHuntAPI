@@ -26,30 +26,15 @@ namespace ScavengerHunt.Controllers
             this.mapper = mapper;
         }
 
-        //GET: /accounts/all
-        [HttpGet("all"), Authorize]
-        public async Task<ActionResult<List<UserDto>>> GetAll()
-        {
-            try
-            {
-                var users = await userRepo.GetAllAsync();
-                return mapper.Map<List<UserDto>>(users);
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e.Message);
-                return StatusCode(503, new CustomError("Internal Server Error", 503, new string[]{"An internal error occured. Please email to jerishbradlyb@gmail.com and we will try to fix it."}));
-            }
-        }
-
         //GET: /accounts/
         [Authorize, HttpGet]
         public async Task<ActionResult<UserDto>> Get()
         {
             try
             {
-                var user = await helpService.GetCurrentUser(HttpContext);
-                if (user is null){return NotFound(new CustomError("Bad Request", 404, new string[]{"User does not exist"}));}
+                string userId = helpService.GetCurrentUserId(this.User);
+                var user = await userRepo.GetAsync(userId);
+                if (user == null){ return NotFound(new CustomError("Login Error", 404, new string[] { "The User doesn't exist" }));}
 
                 return mapper.Map<UserDto>(user);
             }
@@ -60,6 +45,26 @@ namespace ScavengerHunt.Controllers
             }
         }
 
+        [Authorize, HttpPost]
+        public async Task<ActionResult<UserDto>> Create([FromBody] string name)
+        {
+            try
+            {
+                string userId = helpService.GetCurrentUserId(this.User);
+                
+                User newUser = new(userId, name);
+
+                await userRepo.CreateAsync(newUser);
+                await userRepo.SaveChangesAsync();
+                return Ok(mapper.Map<UserDto>(newUser));
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e.Message);
+                return StatusCode(503, new CustomError("Internal Server Error", 503, new string[] { "An internal error occured. Please email to jerishbradlyb@gmail.com and we will try to fix it." }));
+            }
+        }
+
         //PUT: /accounts/profileimage
         [Authorize, HttpPut("profileImage")]
         public async Task<ActionResult> AddImage()
@@ -67,7 +72,8 @@ namespace ScavengerHunt.Controllers
             try
             {
 
-                var user = await helpService.GetCurrentUser(HttpContext);
+                string userId = helpService.GetCurrentUserId(this.User);
+                var user = await userRepo.GetAsync(userId);
                 if (user == null)
                 {
                     return NotFound(new CustomError("Login Error", 404, new string[] { "The User doesn't exist" }));
@@ -99,7 +105,8 @@ namespace ScavengerHunt.Controllers
         {
             try
             {
-                var user = await helpService.GetCurrentUser(HttpContext);
+                string userId = helpService.GetCurrentUserId(this.User);
+                var user = await userRepo.GetAsync(userId);
                 if (user == null)
                 {
                     return NotFound(new CustomError("Login Error", 404, new string[] { "The User doesn't exist" }));

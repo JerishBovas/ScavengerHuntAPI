@@ -34,7 +34,12 @@ namespace ScavengerHunt.Controllers
         {
             try
             {
-                var userId = helpService.GetCurrentUserId(HttpContext) ?? Guid.Empty;
+                string userId = helpService.GetCurrentUserId(this.User);
+                var user = await userRepo.GetAsync(userId);
+                if (user == null)
+                {
+                    return NotFound(new CustomError("Login Error", 404, new string[] { "The User doesn't exist" }));
+                }
                 var teams = await teamRepo.GetAllAsync();
                 teams.RemoveAll(g => g.IsOpen == false);
                 
@@ -61,7 +66,7 @@ namespace ScavengerHunt.Controllers
 
         // GET api/team/5
         [Authorize, HttpGet("{id}")]
-        public async Task<ActionResult<TeamDto>> Get(Guid id)
+        public async Task<ActionResult<TeamDto>> Get(string id)
         {
             try
             {
@@ -83,7 +88,8 @@ namespace ScavengerHunt.Controllers
         {
             try
             {
-                var user = await helpService.GetCurrentUser(HttpContext);
+                string userId = helpService.GetCurrentUserId(this.User);
+                var user = await userRepo.GetAsync(userId);
                 if (user == null) { return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"})); }
 
                 Team newgrp = mapper.Map<Team>(res);
@@ -105,14 +111,13 @@ namespace ScavengerHunt.Controllers
 
         // PUT api/team/5
         [Authorize, HttpPut("{id}")]
-        public async Task<ActionResult> Update(Guid id, [FromBody] TeamCreateDto res)
+        public async Task<ActionResult> Update(string id, [FromBody] TeamCreateDto res)
         {
             try
             {
-                var user = await helpService.GetCurrentUser(HttpContext);
-                if (user == null) { return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"})); }
+                string userId = helpService.GetCurrentUserId(this.User);
 
-                var grp = await teamRepo.GetAsync(id, user.Id);
+                var grp = await teamRepo.GetAsync(id, userId);
                 if (grp == null){return NotFound(new CustomError("Login Error", 404, new string[]{"Team doesn't exist"}));}
 
                 grp = mapper.Map<TeamCreateDto, Team>(res, grp);
@@ -127,22 +132,18 @@ namespace ScavengerHunt.Controllers
         }
 
         [Authorize, HttpPut("{id}/image")]
-        public async Task<ActionResult> UploadImage(Guid id, [FromForm] ImageForm file)
+        public async Task<ActionResult> UploadImage(string id, [FromForm] ImageForm file)
         {
             try
             {
                 if(file.ImageFile == null) return BadRequest(new CustomError("Invalid Image", 400, new string[]{"Please upload a valid image"}));
 
-                var user = await helpService.GetCurrentUser(HttpContext);
-                if (user == null)
-                {
-                    return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"}));
-                }
+                string userId = helpService.GetCurrentUserId(this.User);
 
                 string name = Guid.NewGuid().ToString() + DateTime.Now.ToBinary().ToString();
                 string url = await blobService.UploadImage("teams", name, file.ImageFile.OpenReadStream());
 
-                var grp = await teamRepo.GetAsync(id, user.Id);
+                var grp = await teamRepo.GetAsync(id, userId);
                 if (grp == null){return NotFound(new CustomError("Login Error", 404, new string[]{"Team doesn't exist"}));}
 
                 grp.TeamIcon = url;
@@ -158,12 +159,16 @@ namespace ScavengerHunt.Controllers
 
         // DELETE api/team/5
         [Authorize, HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(Guid id)
+        public async Task<ActionResult> Delete(string id)
         {
             try
             {
-                var user = await helpService.GetCurrentUser(HttpContext);
-                if (user is null) { return NotFound(new CustomError("Login Error", 404, new string[]{"The User doesn't exist"})); }
+                string userId = helpService.GetCurrentUserId(this.User);
+                var user = await userRepo.GetAsync(userId);
+                if (user == null)
+                {
+                    return NotFound(new CustomError("Login Error", 404, new string[] { "The User doesn't exist" }));
+                }
 
                 var team = await teamRepo.GetAsync(id, user.Id);
                 if (team is null) { return NotFound(new CustomError("Not Found", 404, new string[]{"Team doesn't exist."})); }

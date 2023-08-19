@@ -1,15 +1,15 @@
 ﻿namespace ScavengerHunt.DTOs
 {
-	public record struct GameDetailDto
+	public struct GameDetailDto
 	{
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public bool IsPrivate { get; set; }
         public bool IsReadyToPlay { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public string Address { get; set; }
         public string Country { get; set; }
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         public bool IsUser { get; set; }
         public CoordinateDto Coordinate { get; set; }
         public ICollection<ItemDto> Items { get; set; }

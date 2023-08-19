@@ -1,8 +1,6 @@
-﻿using Amazon.Rekognition.Model;
-
-namespace ScavengerHunt.DTOs
+﻿namespace ScavengerHunt.DTOs
 {
-	public record struct ItemCreateDto
+	public struct ItemCreateDto
 	{
 		public string Name { get; set; }
         public string ImageUrl { get; set; }

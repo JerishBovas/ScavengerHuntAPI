@@ -10,8 +10,6 @@ public class HuntProfile : Profile
     {
         CreateMap<Coordinate, CoordinateDto>().ReverseMap();
 
-        CreateMap<Account, AccountDto>().ReverseMap();
-
         CreateMap<Game, GameDto>();
 
         CreateMap<Game, GameDetailDto>().ForMember(dest => dest.Ratings, opt => opt.MapFrom(game => game.Ratings.Count > 0 ? Math.Round(((double)game.Ratings.Select(x => x.Value).Sum()/(double)game.Ratings.Count), 1) : 0));

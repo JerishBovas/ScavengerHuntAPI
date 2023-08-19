@@ -1,11 +1,10 @@
 ﻿// This is the object for each items added to a game
-using Amazon.Rekognition.Model;
 
 namespace ScavengerHunt.Models
 {
-    public record Item
+    public class Item
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
         public string ImageUrl { get; set; } = "";
     }

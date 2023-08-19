@@ -1,6 +1,6 @@
 ﻿namespace ScavengerHunt.DTOs
 {
-	public record struct GameCreateDto
+	public struct GameCreateDto
 	{
         public bool IsPrivate { get; set; }
         public string Name { get; set; }

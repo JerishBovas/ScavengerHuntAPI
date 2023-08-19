@@ -1,5 +1,4 @@
-﻿using Amazon.Rekognition.Model;
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -36,13 +35,15 @@ namespace ScavengerHunt.Controllers
         // And returns a list of items in the game
         // GET: api/Games/{id}/Items
         [Authorize, HttpGet]
-        public async Task<ActionResult<List<ItemDto>>> Get(Guid gameId)
+        public async Task<ActionResult<List<ItemDto>>> Get(string gameId)
         {
             try
             {
-                var userId = helpService.GetCurrentUserId(HttpContext) ?? Guid.Empty;
-                if(userId == Guid.Empty) {
-                    return NotFound(new CustomError("Bad Request", 404, new string[]{"User does not exist"}));
+                string userId = helpService.GetCurrentUserId(this.User);
+                var user = await userRepo.GetAsync(userId);
+                if (user == null)
+                {
+                    return NotFound(new CustomError("Login Error", 404, new string[] { "The User doesn't exist" }));
                 }
                 var game = await gameRepo.GetAsync(gameId, userId);
                 if(game == null)
@@ -62,13 +63,15 @@ namespace ScavengerHunt.Controllers
         // And returns itemDto
         // GET api/Game/5
         [Authorize, HttpGet("{id}")]
-        public async Task<ActionResult<ItemDto>> Get(Guid id, Guid gameId)
+        public async Task<ActionResult<ItemDto>> Get(string id, string gameId)
         {
             try
             {
-                var userId = helpService.GetCurrentUserId(HttpContext) ?? Guid.Empty;
-                if(userId == Guid.Empty) {
-                    return NotFound(new CustomError("Bad Request", 404, new string[]{"User does not exist"}));
+                string userId = helpService.GetCurrentUserId(this.User);
+                var user = await userRepo.GetAsync(userId);
+                if (user == null)
+                {
+                    return NotFound(new CustomError("Login Error", 404, new string[] { "The User doesn't exist" }));
                 }
                 var game = await gameRepo.GetAsync(gameId, userId);
                 if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found or you don't have access."}));}
@@ -89,12 +92,16 @@ namespace ScavengerHunt.Controllers
         // And returns created item id
         // POST api/Game
         [Authorize, HttpPost]
-        public async Task<ActionResult> Create(Guid gameId)
+        public async Task<ActionResult> Create(string gameId)
         {
             try
             {
-                var user = await helpService.GetCurrentUser(HttpContext);
-                if (user == null){return NotFound(new CustomError("Bad Request", 404, new string[]{"User does not exist"}));}
+                string userId = helpService.GetCurrentUserId(this.User);
+                var user = await userRepo.GetAsync(userId);
+                if (user == null)
+                {
+                    return NotFound(new CustomError("Login Error", 404, new string[] { "The User doesn't exist" }));
+                }
 
                 var game = await gameRepo.GetAsync(gameId, user.Id);
                 if(game == null){return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found or you don't have access."}));}
@@ -112,7 +119,7 @@ namespace ScavengerHunt.Controllers
                 var item = JsonConvert.DeserializeObject<ItemDto>(json);
 
                 Item newItem = new Item{
-                    Id = Guid.NewGuid(),
+                    Id = Guid.NewGuid().ToString(),
                     Name = item.Name,
                     ImageUrl = url
                 };
@@ -137,15 +144,14 @@ namespace ScavengerHunt.Controllers
         // DELETE api/Game/5
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(Guid id, Guid gameId)
+        public async Task<ActionResult> Delete(string id, string gameId)
         {
             try
             {
-                var user = await helpService.GetCurrentUser(HttpContext);
-                if (user == null){return NotFound(new CustomError("Bad Request", 404, new string[]{"User does not exist"}));}
+                string userId = helpService.GetCurrentUserId(this.User);
 
-                var game = await gameRepo.GetAsync(gameId, user.Id);
-                if (game == null || game.UserId != user.Id) { return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"})); }
+                var game = await gameRepo.GetAsync(gameId, userId);
+                if (game == null || game.UserId != userId) { return NotFound(new CustomError("Not Found", 404, new string[]{"Requested game not found"})); }
 
                 if(game.IsReadyToPlay){return BadRequest(new CustomError("Not Permitted", 404, new string[]{"Operation not permitted. Enter edit mode first and try again."}));}
 

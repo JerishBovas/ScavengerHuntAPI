@@ -2,7 +2,7 @@
 
 namespace ScavengerHunt.DTOs
 {
-    public record struct RegisterDto
+    public struct RegisterDto
     {
         [Required(ErrorMessage = "Name is required")]
         [StringLength(100, ErrorMessage ="Name can't be greater that 100 characters")]

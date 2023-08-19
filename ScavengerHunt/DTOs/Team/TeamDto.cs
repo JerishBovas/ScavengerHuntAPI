@@ -2,8 +2,8 @@
 {
     public struct TeamDto
     {
-        public Guid Id { get; set; }
-        public Guid AdminId { get; set; }
+        public string Id { get; set; }
+        public string AdminId { get; set; }
         public bool IsOpen { get; init; }
         public string Title { get; init; }
         public string Description { get; init; }

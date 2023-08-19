@@ -12,7 +12,7 @@ public class BlobService : IBlobService
     }
 
     // Uploads the given Stream file to the azure storage
-    // Created image name using guid and binary time
+    // Created image name using  and binary time
     // returns the absolute path of the image file
     public async Task<string> UploadImage(string container, string name, Stream file)
     {

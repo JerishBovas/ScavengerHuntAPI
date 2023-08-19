@@ -20,12 +20,12 @@ namespace ScavengerHunt.Services
             return await dbSet.ToListAsync();
         }
 
-        public async Task<Game?> GetByIdAsync(Guid id)
+        public async Task<Game?> GetByIdAsync(string id)
         {
             return await dbSet.FindAsync(id);
         }
 
-        public async Task<Game?> GetAsync(Guid id, Guid gameId)
+        public async Task<Game?> GetAsync(string id, string gameId)
         {
             return await dbSet.FindAsync(id, gameId);
         }

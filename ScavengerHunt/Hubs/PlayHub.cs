@@ -29,13 +29,10 @@ public class PlayHub : Hub
         this.mapper = mapper;
     }
 
-    public async Task StartGame(Guid gameId, Guid gameUserId)
+    public async Task StartGame(string gameId, string gameUserId)
     {
         try
         {
-            bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid userId);
-            if(!didParse) {await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
-
             var game = await gameService.GetAsync(gameId, gameUserId);
             if (game is null) { await Clients.Caller.SendAsync("Error", "Game not found!"); return; }
             
@@ -59,7 +56,7 @@ public class PlayHub : Hub
                 Name = game.Name,
                 Address = game.Address,
                 Country = game.Country,
-                UserId = userId,
+                UserId = Context.UserIdentifier!,
                 Coordinate = new Coordinate{
                     Latitude = game.Coordinate.Latitude, 
                     Longitude = game.Coordinate.Longitude
@@ -84,14 +81,11 @@ public class PlayHub : Hub
         }
     }
 
-    public async Task EndGame(Guid gamePlayId)
+    public async Task EndGame(string gamePlayId)
     {
         try
         {
-            bool didParse = Guid.TryParse(Context.UserIdentifier, out Guid userId);
-            if(!didParse) {await Clients.Caller.SendAsync("Error", "You are not authorized!"); return;}
-
-            var gamePlay = await gamePlayService.GetAsync(gamePlayId, userId);
+            var gamePlay = await gamePlayService.GetAsync(gamePlayId, Context.UserIdentifier!);
             if (gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game Play not found!"); return; }
 
             gamePlay.GameEnded = true;
@@ -111,18 +105,12 @@ public class PlayHub : Hub
     {
         try
         {
-            if (!Guid.TryParse(Context.UserIdentifier, out Guid userId) || 
-                !Guid.TryParse(imageData.ItemId, out Guid itemId) || 
-                !Guid.TryParse(imageData.GamePlayId, out Guid gamePlayId))
-            {
-                await Clients.Caller.SendAsync("Error", "Invalid Information");
-                return;
-            }
+            string userId = Context.UserIdentifier!;
 
             var user = await userService.GetAsync(userId);
             if(user is null){ await Clients.Caller.SendAsync("Error", "User not found!"); return;}
 
-            var gamePlay = await gamePlayService.GetAsync(gamePlayId, userId);
+            var gamePlay = await gamePlayService.GetAsync(imageData.GamePlayId, userId);
             if(gamePlay is null) { await Clients.Caller.SendAsync("Error", "Game Session not found!"); return;}
 
             if(gamePlay.Deadline < DateTimeOffset.UtcNow)
@@ -134,7 +122,7 @@ public class PlayHub : Hub
                 return;
             }
 
-            var item = gamePlay.Items.FirstOrDefault(x => x.Id == itemId);
+            var item = gamePlay.Items.FirstOrDefault(x => x.Id == imageData.ItemId);
             if (item == null)
             {
                 logger.LogInformation("Item Not found.");
@@ -173,12 +161,9 @@ public class PlayHub : Hub
 
     public async Task AddRating(int rating, string gamePlayId)
     {
-        if(!Guid.TryParse(gamePlayId, out Guid parsedGamePlayId) || 
-        !Guid.TryParse(Context.UserIdentifier, out Guid userId)){
-            return;
-        }
+        string userId = Context.UserIdentifier!;
 
-        var gamePlay  = await gamePlayService.GetAsync(parsedGamePlayId, userId);
+        var gamePlay  = await gamePlayService.GetAsync(gamePlayId, userId);
         if(gamePlay is null) { return;}
 
         var game = await gameService.GetAsync(gamePlay.GameId, gamePlay.GameUserId);
@@ -199,18 +184,12 @@ public class PlayHub : Hub
 
     public async Task GameStatus(string gameId, string userId)
     {
-        if(!Guid.TryParse(gameId, out Guid parsedGameId) ||
-        !Guid.TryParse(userId, out Guid parsedUserId) ||
-        !Guid.TryParse(Context.UserIdentifier, out Guid realUserId)){
-            await Clients.Caller.SendAsync("GameStatus", false); return;
-        }
-
-        var game = await gameService.GetAsync(parsedGameId, parsedUserId);
+        var game = await gameService.GetAsync(gameId, userId);
         if (game is null) { 
             await Clients.Caller.SendAsync("GameStatus", false);
             return; }
 
-        if(game.IsPrivate && game.UserId != realUserId){await Clients.Caller.SendAsync("GameStatus", false); return;}
+        if(game.IsPrivate && game.UserId != Context.UserIdentifier){await Clients.Caller.SendAsync("GameStatus", false); return;}
 
         if(game.Items.Count <= 0){ await Clients.Caller.SendAsync("GameStatus", false); return;}
 
